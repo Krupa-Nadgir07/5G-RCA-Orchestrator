@@ -1,0 +1,49 @@
+# Handover Failure in 5G NR (gNB)
+
+## Symptoms
+- Low handover success rate below 85%
+- High handover failure rate
+- Radio Link Failures (RLF) during mobility
+- Call drops at cell edges
+- Ping-pong handovers between cells
+- Connection re-establishment failures
+
+## KPI Signatures
+- handover_success_rate < 0.85 (critical if < 0.70)
+- rsrp_dbm < -110 (weak serving cell signal)
+- rsrq_db < -15 (poor signal quality)
+- Increased RRC re-establishment attempts
+- High T310 timer expirations
+
+## Root Causes
+- Coverage gap between source and target cells
+- Incorrect A3 event threshold or hysteresis parameters
+- Missing neighbor cell relations in NRT (Neighbor Relation Table)
+- Timing advance issues at cell edge
+- Target cell congestion rejecting handover requests
+- X2/Xn interface issues between gNBs
+- Measurement report configuration too slow/fast
+- PCI confusion preventing proper measurement
+
+## 3GPP Reference
+- TS 38.331: RRC protocol for handover procedures
+- TS 38.300: NR handover overview and mobility management
+- TS 38.133: Requirements for measurement reporting
+- TS 38.423: Xn handover signaling
+
+## Remediation
+- Review A3 event threshold and hysteresis parameters
+- Check T310/N310/N311 timer configurations
+- Verify Neighbor Relation Table (NRT) completeness
+- Analyze coverage overlap between source and target cells
+- Add missing neighbor relations via ANR
+- Adjust measurement report periodicity
+- Check target cell admission control parameters
+- Evaluate inter-frequency/inter-RAT handover configuration
+
+## Correlation Patterns
+- Low HO success + Low RSRP = coverage gap at cell edge
+- Low HO success + Normal RSRP = configuration/NRT issue
+- Low HO success + High RSRQ degradation = rapid mobility scenario
+- Ping-pong pattern = hysteresis too low or threshold mismatch
+- Cluster of HO failures in specific area = physical obstruction or gap

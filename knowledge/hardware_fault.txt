@@ -1,0 +1,50 @@
+# Hardware Fault in 5G NR (gNB)
+
+## Symptoms
+- Random and unpredictable KPI instability
+- High BLER without corresponding interference indicators
+- Inconsistent behavior across time (not load-dependent)
+- Sudden performance degradation without network changes
+- Temperature alarms or power supply warnings
+- Erratic signal patterns not explained by RF conditions
+
+## KPI Signatures
+- bler_pct > 10 with normal SINR (distinguishes from interference)
+- Sporadic latency spikes unrelated to load
+- Handover failures without coverage issues
+- KPI variance much higher than neighboring cells
+- Performance degradation not correlated with traffic patterns
+
+## Root Causes
+- Faulty antenna elements or connectors
+- Degraded power amplifier (PA) performance
+- Damaged RF cables or jumpers
+- Remote Radio Unit (RRU) component failure
+- Baseband unit processing errors
+- Temperature-related intermittent faults
+- Power supply instability
+- CPRI/eCPRI link errors between BBU and RRU
+- Firmware bugs causing intermittent failures
+
+## 3GPP Reference
+- TS 28.552: Performance measurements for fault correlation
+- TS 28.632: Fault management model
+- O-RAN WG4: Hardware fault management procedures
+- TS 32.111: Fault management architecture
+
+## Remediation
+- Inspect physical hardware: antenna, cables, RRU
+- Check environmental conditions (temperature, humidity, power)
+- Review hardware alarm history and correlate with KPI degradation
+- Run built-in self-test (BIST) diagnostics
+- Compare performance with neighboring cells using same hardware
+- Schedule maintenance window for component replacement
+- Verify CPRI/eCPRI link quality
+- Check for firmware updates addressing known hardware issues
+
+## Correlation Patterns
+- High BLER + Normal SINR = likely hardware (not interference)
+- Random KPI instability + No load correlation = hardware suspect
+- Degradation in one cell while neighbors are stable = local hardware
+- Temperature-correlated performance = thermal hardware issue
+- Sudden step-change in performance = component failure event

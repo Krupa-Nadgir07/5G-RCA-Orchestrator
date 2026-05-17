@@ -1,0 +1,44 @@
+# Interference in 5G NR (gNB)
+
+## Symptoms
+- Low SINR (Signal-to-Interference-plus-Noise Ratio) below 5 dB
+- Elevated BLER (Block Error Rate) above 10%
+- High interference level above -90 dBm
+- Unstable or degraded downlink throughput
+- Frequent adaptive modulation fallback to lower MCS
+- Increased retransmissions (HARQ)
+
+## KPI Signatures
+- sinr_db < 5 (critical if < 0)
+- bler_pct > 10
+- interference_level_dbm > -90
+- throughput_dl_mbps significantly below expected
+- mcs_dl_avg drops below normal
+
+## Root Causes
+- Physical Cell ID (PCI) collision or confusion between neighboring cells
+- Co-channel interference from adjacent cells with same frequency
+- External interference sources (radar, unlicensed band devices)
+- Improper antenna tilt causing coverage overlap
+- Missing or incorrect ICIC (Inter-Cell Interference Coordination) configuration
+- Uplink interference from other UEs in neighboring cells
+
+## 3GPP Reference
+- TS 38.213: Physical layer procedures for interference management
+- TS 38.300: NR overall description including interference scenarios
+- TS 38.423: Xn interface for inter-cell coordination
+
+## Remediation
+- Analyze neighboring cell PCI and frequency reuse patterns
+- Adjust antenna electrical/mechanical tilt
+- Enable or tune ICIC power control parameters
+- Consider frequency refarming or carrier aggregation
+- Check for external interference sources using spectrum analyzer
+- Evaluate beam management and SSB beam configuration
+- Review Automatic Neighbor Relations (ANR) table
+
+## Correlation Patterns
+- Low SINR + High BLER = strong interference indicator
+- Low SINR + Normal PRB utilization = external interference (not congestion)
+- Low SINR + High interference_level_dbm = confirmed RF interference
+- Interference typically affects cell-edge UEs more severely

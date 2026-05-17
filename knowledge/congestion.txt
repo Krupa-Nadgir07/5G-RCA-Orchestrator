@@ -1,0 +1,47 @@
+# Resource Congestion in 5G NR (gNB)
+
+## Symptoms
+- High PRB (Physical Resource Block) utilization above 85%
+- Large number of connected UEs exceeding cell capacity
+- Increased latency above 50ms
+- Throughput degradation across multiple UEs
+- QoS violations for priority traffic
+- Scheduling delays and buffer buildup
+
+## KPI Signatures
+- prb_utilization_pct > 85 (critical if > 95)
+- connected_ues > 300 (relative to cell capacity)
+- latency_ms > 50 (critical if > 100)
+- throughput_dl_mbps below SLA requirements
+- cqi_avg decreasing due to scheduling limitations
+
+## Root Causes
+- Cell capacity exceeded by traffic demand
+- Traffic hotspot formation (events, stadium, transport hub)
+- Insufficient cell density for subscriber growth
+- Poor load balancing between overlapping cells
+- Single dominant cell serving disproportionate load
+- QoS misconfiguration leading to resource monopolization
+- Abnormal UE behavior consuming excessive resources
+
+## 3GPP Reference
+- TS 38.300: Resource management and scheduling
+- TS 38.413: NGAP for QoS flow management
+- TS 28.310: Network Resource Model for capacity planning
+- TS 38.423: Xn Application Protocol for MLB (Mobility Load Balancing)
+
+## Remediation
+- Evaluate cell split or capacity expansion options
+- Review QoS priority and scheduling configurations
+- Implement or tune Mobility Load Balancing (MLB) parameters
+- Analyze traffic patterns for proactive capacity planning
+- Check for rogue UEs consuming excessive resources
+- Consider carrier aggregation to increase available resources
+- Implement traffic steering to less loaded cells/layers
+- Review admission control parameters
+
+## Correlation Patterns
+- High PRB + High UE count + High latency = cell overload confirmed
+- High PRB + Normal UE count = heavy traffic per UE (video/streaming)
+- High PRB + High latency + Low throughput = severe congestion
+- Congestion typically affects all UEs in the cell proportionally

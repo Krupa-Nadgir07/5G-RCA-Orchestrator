@@ -1,0 +1,356 @@
+[
+  {
+    "event_id": "evt_001",
+    "cell_id": "cell_101",
+    "gnb_id": "gnb_01",
+    "issue": "throughput_degradation",
+    "kpis": {
+      "sinr_db": 3,
+      "prb_utilization_pct": 96,
+      "bler_pct": 18,
+      "handover_success_rate": 0.92,
+      "interference_level_dbm": -82
+    },
+    "ground_truth": "interference"
+  },
+  {
+    "event_id": "evt_002",
+    "cell_id": "cell_205",
+    "gnb_id": "gnb_02",
+    "issue": "handover_failure",
+    "kpis": {
+      "sinr_db": 18,
+      "prb_utilization_pct": 40,
+      "bler_pct": 2,
+      "handover_success_rate": 0.65,
+      "rsrp_dbm": -125
+    },
+    "ground_truth": "handover_failure"
+  },
+  {
+    "event_id": "evt_003",
+    "cell_id": "cell_310",
+    "gnb_id": "gnb_03",
+    "issue": "high_latency",
+    "kpis": {
+      "sinr_db": 12,
+      "prb_utilization_pct": 97,
+      "bler_pct": 3,
+      "connected_ues": 450,
+      "latency_ms": 85
+    },
+    "ground_truth": "resource_congestion"
+  },
+  {
+    "event_id": "evt_004",
+    "cell_id": "cell_102",
+    "gnb_id": "gnb_01",
+    "issue": "random_kpi_instability",
+    "kpis": {
+      "sinr_db": 8,
+      "prb_utilization_pct": 55,
+      "bler_pct": 25,
+      "handover_success_rate": 0.78,
+      "latency_ms": 120
+    },
+    "ground_truth": "hardware_fault"
+  },
+  {
+    "event_id": "evt_005",
+    "cell_id": "cell_405",
+    "gnb_id": "gnb_04",
+    "issue": "throughput_degradation",
+    "kpis": {
+      "sinr_db": 1,
+      "prb_utilization_pct": 72,
+      "bler_pct": 22,
+      "interference_level_dbm": -78,
+      "rsrp_dbm": -105
+    },
+    "ground_truth": "interference"
+  },
+  {
+    "event_id": "evt_006",
+    "cell_id": "cell_206",
+    "gnb_id": "gnb_02",
+    "issue": "handover_failure",
+    "kpis": {
+      "sinr_db": 14,
+      "prb_utilization_pct": 35,
+      "bler_pct": 1,
+      "handover_success_rate": 0.58,
+      "rsrp_dbm": -128,
+      "rsrq_db": -18
+    },
+    "ground_truth": "handover_failure"
+  },
+  {
+    "event_id": "evt_007",
+    "cell_id": "cell_311",
+    "gnb_id": "gnb_03",
+    "issue": "high_latency",
+    "kpis": {
+      "sinr_db": 10,
+      "prb_utilization_pct": 94,
+      "bler_pct": 4,
+      "connected_ues": 520,
+      "latency_ms": 110
+    },
+    "ground_truth": "resource_congestion"
+  },
+  {
+    "event_id": "evt_008",
+    "cell_id": "cell_103",
+    "gnb_id": "gnb_01",
+    "issue": "random_kpi_instability",
+    "kpis": {
+      "sinr_db": 15,
+      "prb_utilization_pct": 30,
+      "bler_pct": 35,
+      "handover_success_rate": 0.88,
+      "latency_ms": 95
+    },
+    "ground_truth": "hardware_fault"
+  },
+  {
+    "event_id": "evt_009",
+    "cell_id": "cell_406",
+    "gnb_id": "gnb_04",
+    "issue": "signal_quality_alarm",
+    "kpis": {
+      "sinr_db": -2,
+      "prb_utilization_pct": 60,
+      "bler_pct": 28,
+      "interference_level_dbm": -75,
+      "rsrp_dbm": -115
+    },
+    "ground_truth": "interference"
+  },
+  {
+    "event_id": "evt_010",
+    "cell_id": "cell_207",
+    "gnb_id": "gnb_02",
+    "issue": "handover_failure",
+    "kpis": {
+      "sinr_db": 6,
+      "prb_utilization_pct": 45,
+      "bler_pct": 5,
+      "handover_success_rate": 0.70,
+      "rsrp_dbm": -122,
+      "rsrq_db": -16
+    },
+    "ground_truth": "handover_failure"
+  },
+  {
+    "event_id": "evt_011",
+    "cell_id": "cell_312",
+    "gnb_id": "gnb_03",
+    "issue": "throughput_degradation",
+    "kpis": {
+      "sinr_db": 9,
+      "prb_utilization_pct": 99,
+      "bler_pct": 6,
+      "connected_ues": 480,
+      "latency_ms": 72
+    },
+    "ground_truth": "resource_congestion"
+  },
+  {
+    "event_id": "evt_012",
+    "cell_id": "cell_104",
+    "gnb_id": "gnb_01",
+    "issue": "random_kpi_instability",
+    "kpis": {
+      "sinr_db": 20,
+      "prb_utilization_pct": 25,
+      "bler_pct": 40,
+      "handover_success_rate": 0.60,
+      "latency_ms": 200
+    },
+    "ground_truth": "hardware_fault"
+  },
+  {
+    "event_id": "evt_013",
+    "cell_id": "cell_407",
+    "gnb_id": "gnb_04",
+    "issue": "signal_quality_alarm",
+    "kpis": {
+      "sinr_db": 2,
+      "prb_utilization_pct": 80,
+      "bler_pct": 15,
+      "interference_level_dbm": -80,
+      "rsrp_dbm": -110
+    },
+    "ground_truth": "interference"
+  },
+  {
+    "event_id": "evt_014",
+    "cell_id": "cell_208",
+    "gnb_id": "gnb_02",
+    "issue": "handover_failure",
+    "kpis": {
+      "sinr_db": 11,
+      "prb_utilization_pct": 50,
+      "bler_pct": 3,
+      "handover_success_rate": 0.62,
+      "rsrp_dbm": -130,
+      "rsrq_db": -20
+    },
+    "ground_truth": "handover_failure"
+  },
+  {
+    "event_id": "evt_015",
+    "cell_id": "cell_313",
+    "gnb_id": "gnb_03",
+    "issue": "high_latency",
+    "kpis": {
+      "sinr_db": 15,
+      "prb_utilization_pct": 92,
+      "bler_pct": 2,
+      "connected_ues": 400,
+      "latency_ms": 65
+    },
+    "ground_truth": "resource_congestion"
+  },
+  {
+    "event_id": "evt_016",
+    "cell_id": "cell_105",
+    "gnb_id": "gnb_01",
+    "issue": "random_kpi_instability",
+    "kpis": {
+      "sinr_db": 5,
+      "prb_utilization_pct": 45,
+      "bler_pct": 30,
+      "handover_success_rate": 0.72,
+      "latency_ms": 150
+    },
+    "ground_truth": "hardware_fault"
+  },
+  {
+    "event_id": "evt_017",
+    "cell_id": "cell_408",
+    "gnb_id": "gnb_04",
+    "issue": "throughput_degradation",
+    "kpis": {
+      "sinr_db": 4,
+      "prb_utilization_pct": 65,
+      "bler_pct": 12,
+      "interference_level_dbm": -84,
+      "rsrp_dbm": -108
+    },
+    "ground_truth": "interference"
+  },
+  {
+    "event_id": "evt_018",
+    "cell_id": "cell_209",
+    "gnb_id": "gnb_02",
+    "issue": "handover_failure",
+    "kpis": {
+      "sinr_db": 7,
+      "prb_utilization_pct": 38,
+      "bler_pct": 4,
+      "handover_success_rate": 0.55,
+      "rsrp_dbm": -126,
+      "rsrq_db": -17
+    },
+    "ground_truth": "handover_failure"
+  },
+  {
+    "event_id": "evt_019",
+    "cell_id": "cell_314",
+    "gnb_id": "gnb_03",
+    "issue": "throughput_degradation",
+    "kpis": {
+      "sinr_db": 13,
+      "prb_utilization_pct": 88,
+      "bler_pct": 5,
+      "connected_ues": 380,
+      "latency_ms": 55
+    },
+    "ground_truth": "resource_congestion"
+  },
+  {
+    "event_id": "evt_020",
+    "cell_id": "cell_106",
+    "gnb_id": "gnb_01",
+    "issue": "random_kpi_instability",
+    "kpis": {
+      "sinr_db": 18,
+      "prb_utilization_pct": 20,
+      "bler_pct": 45,
+      "handover_success_rate": 0.50,
+      "latency_ms": 180
+    },
+    "ground_truth": "hardware_fault"
+  },
+  {
+    "event_id": "evt_021",
+    "cell_id": "cell_409",
+    "gnb_id": "gnb_04",
+    "issue": "signal_quality_alarm",
+    "kpis": {
+      "sinr_db": 0,
+      "prb_utilization_pct": 55,
+      "bler_pct": 20,
+      "interference_level_dbm": -76,
+      "rsrp_dbm": -118
+    },
+    "ground_truth": "interference"
+  },
+  {
+    "event_id": "evt_022",
+    "cell_id": "cell_210",
+    "gnb_id": "gnb_02",
+    "issue": "handover_failure",
+    "kpis": {
+      "sinr_db": 9,
+      "prb_utilization_pct": 42,
+      "bler_pct": 2,
+      "handover_success_rate": 0.68,
+      "rsrp_dbm": -124
+    },
+    "ground_truth": "handover_failure"
+  },
+  {
+    "event_id": "evt_023",
+    "cell_id": "cell_315",
+    "gnb_id": "gnb_03",
+    "issue": "high_latency",
+    "kpis": {
+      "sinr_db": 11,
+      "prb_utilization_pct": 91,
+      "bler_pct": 3,
+      "connected_ues": 510,
+      "latency_ms": 90
+    },
+    "ground_truth": "resource_congestion"
+  },
+  {
+    "event_id": "evt_024",
+    "cell_id": "cell_107",
+    "gnb_id": "gnb_01",
+    "issue": "random_kpi_instability",
+    "kpis": {
+      "sinr_db": 12,
+      "prb_utilization_pct": 40,
+      "bler_pct": 38,
+      "handover_success_rate": 0.65,
+      "latency_ms": 160
+    },
+    "ground_truth": "hardware_fault"
+  },
+  {
+    "event_id": "evt_025",
+    "cell_id": "cell_410",
+    "gnb_id": "gnb_04",
+    "issue": "throughput_degradation",
+    "kpis": {
+      "sinr_db": 1,
+      "prb_utilization_pct": 70,
+      "bler_pct": 24,
+      "interference_level_dbm": -79,
+      "rsrp_dbm": -112
+    },
+    "ground_truth": "interference"
+  }
+]

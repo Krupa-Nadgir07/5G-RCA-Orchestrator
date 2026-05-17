@@ -1,0 +1,8 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'rca-api'
+    static_configs:
+      - targets: ['rca-api:8000']
+    metrics_path: '/api/v1/metrics'
