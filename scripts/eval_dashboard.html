@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>5G RCA · Model Evaluation Dashboard</title>
+  <meta name="description" content="Multi-model evaluation dashboard for the 5G gNodeB Root Cause Analysis system — accuracy, F1, ECE, RAG quality, latency and side-by-side output comparison.">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    /* ── Design tokens ─────────────────────────────────────────── */
+    :root {
+      --bg:        #0a0e1a;
+      --bg-2:      #0f1422;
+      --bg-3:      #141928;
+      --bg-card:   #161d30;
+      --border:    #1e2a42;
+      --border-hi: #2a3a58;
+
+      --accent:    #00e5a0;   /* emerald */
+      --accent-2:  #0084ff;   /* sapphire */
+      --accent-3:  #f59e0b;   /* amber */
+      --accent-4:  #ef4444;   /* red */
+      --accent-5:  #a855f7;   /* violet */
+
+      --text:      #e2e8f0;
+      --text-2:    #94a3b8;
+      --text-3:    #64748b;
+
+      --correct:   #00e5a0;
+      --wrong:     #ef4444;
+
+      /* 8 root-cause colours */
+      --c1: #0084ff;
+      --c2: #00e5a0;
+      --c3: #f59e0b;
+      --c4: #a855f7;
+      --c5: #ef4444;
+      --c6: #06b6d4;
+      --c7: #ec4899;
+      --c8: #84cc16;
+
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow: 0 4px 24px rgba(0,0,0,.45);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* ── Scrollbar ─────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-2); }
+    ::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 3px; }
+
+    /* ── Header ────────────────────────────────────────────────── */
+    header {
+      background: linear-gradient(135deg, #0a0e1a 0%, #0d1226 60%, #061020 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 20px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(8px);
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .logo-icon {
+      width: 40px; height: 40px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+    }
+    .logo-text h1 { font-size: 1.15rem; font-weight: 700; letter-spacing: -.5px; }
+    .logo-text p  { font-size: .75rem; color: var(--text-2); }
+    .header-actions { display: flex; align-items: center; gap: 12px; }
+    #run-meta { font-size: .75rem; color: var(--text-3); font-family: 'JetBrains Mono', monospace; }
+
+    /* ── Upload zone ───────────────────────────────────────────── */
+    #upload-zone {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      transition: opacity .3s;
+    }
+    #upload-zone.hidden { opacity: 0; pointer-events: none; }
+    .upload-card {
+      border: 2px dashed var(--border-hi);
+      border-radius: 20px;
+      padding: 64px 80px;
+      text-align: center;
+      background: var(--bg-card);
+      transition: border-color .2s, box-shadow .2s;
+      cursor: pointer;
+    }
+    .upload-card:hover, .upload-card.drag-over {
+      border-color: var(--accent);
+      box-shadow: 0 0 40px rgba(0,229,160,.12);
+    }
+    .upload-icon { font-size: 56px; margin-bottom: 20px; }
+    .upload-card h2 { font-size: 1.5rem; margin-bottom: 8px; }
+    .upload-card p  { color: var(--text-2); font-size: .9rem; margin-bottom: 24px; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 20px; border-radius: var(--radius-sm);
+      font-size: .85rem; font-weight: 600; cursor: pointer;
+      border: none; transition: all .15s;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #000;
+    }
+    .btn-primary:hover { background: #00c98e; transform: translateY(-1px); }
+    .btn-secondary {
+      background: var(--bg-3);
+      color: var(--text);
+      border: 1px solid var(--border-hi);
+    }
+    .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+    #file-input { display: none; }
+
+    /* ── Main layout ───────────────────────────────────────────── */
+    #dashboard { display: none; }
+    #dashboard.visible { display: block; }
+    .container { max-width: 1440px; margin: 0 auto; padding: 28px 32px; }
+
+    /* ── Stats row ─────────────────────────────────────────────── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--accent-clr, var(--accent));
+    }
+    .stat-card .label { font-size: .72rem; color: var(--text-3); text-transform: uppercase; letter-spacing: .08em; }
+    .stat-card .value { font-size: 1.75rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; margin: 6px 0 2px; }
+    .stat-card .sub   { font-size: .72rem; color: var(--text-2); }
+
+    /* ── Section ───────────────────────────────────────────────── */
+    .section { margin-bottom: 28px; }
+    .section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .section-title {
+      font-size: .85rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: .1em; color: var(--text-2);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section-title span { color: var(--accent); font-size: 1rem; }
+
+    /* ── Card ──────────────────────────────────────────────────── */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .card-body { padding: 20px; }
+
+    /* ── 2-col grid ────────────────────────────────────────────── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+    @media (max-width: 900px) {
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    }
+
+    /* ── Leaderboard table ─────────────────────────────────────── */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+    thead th {
+      padding: 10px 14px;
+      text-align: left;
+      font-size: .72rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: .08em; color: var(--text-3);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+      cursor: pointer;
+      user-select: none;
+    }
+    thead th:hover { color: var(--accent); }
+    thead th.sorted { color: var(--accent); }
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background .12s;
+    }
+    tbody tr:hover { background: rgba(255,255,255,.03); }
+    tbody tr.top-row { background: rgba(0,229,160,.05); }
+    tbody td { padding: 12px 14px; }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px; border-radius: 999px;
+      font-size: .7rem; font-weight: 600;
+    }
+    .badge-llm  { background: rgba(0,132,255,.15); color: #60a5fa; }
+    .badge-slm  { background: rgba(0,229,160,.15); color: var(--accent); }
+    .badge-moe  { background: rgba(165,85,247,.15); color: #c084fc; }
+    .meter {
+      width: 100%;
+      height: 6px;
+      background: var(--bg-3);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .meter-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: linear-gradient(90deg, var(--accent-2), var(--accent));
+      transition: width .6s cubic-bezier(.4,0,.2,1);
+    }
+
+    /* ── Charts ────────────────────────────────────────────────── */
+    .chart-wrap {
+      position: relative;
+      padding: 16px;
+    }
+    canvas { max-width: 100%; }
+
+    /* ── Confusion matrix ──────────────────────────────────────── */
+    .cm-wrap { overflow-x: auto; padding: 20px; }
+    .cm-table {
+      border-collapse: collapse;
+      font-size: .75rem;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .cm-table th {
+      padding: 6px 10px;
+      color: var(--text-3);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .cm-table td {
+      width: 44px; height: 44px;
+      text-align: center;
+      border: 1px solid var(--border);
+      font-weight: 600;
+      transition: background .2s;
+    }
+    .cm-axis-label {
+      text-align: center;
+      color: var(--text-3);
+      font-size: .7rem;
+      padding: 8px;
+    }
+
+    /* ── RAG panel ─────────────────────────────────────────────── */
+    .rag-bar-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .rag-bar-row:last-child { border-bottom: none; }
+    .rag-bar-label { width: 220px; font-size: .78rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rag-bar-track { flex: 1; height: 8px; background: var(--bg-3); border-radius: 4px; overflow: hidden; }
+    .rag-bar-fill  { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--accent-2), var(--accent)); }
+    .rag-bar-val   { width: 55px; text-align: right; font-size: .78rem; font-family: 'JetBrains Mono', monospace; color: var(--text-2); }
+
+    /* ── Output viewer ─────────────────────────────────────────── */
+    #output-viewer { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); }
+    .viewer-controls {
+      display: flex; align-items: center; gap: 12px;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .viewer-controls label { font-size: .8rem; color: var(--text-2); }
+    select, input[type=number] {
+      background: var(--bg-3);
+      border: 1px solid var(--border-hi);
+      color: var(--text);
+      border-radius: var(--radius-sm);
+      padding: 6px 10px;
+      font-size: .82rem;
+      font-family: inherit;
+    }
+    select:focus, input:focus { outline: none; border-color: var(--accent); }
+    .output-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 1px;
+      background: var(--border);
+    }
+    .output-pane {
+      background: var(--bg-card);
+      padding: 18px;
+    }
+    .output-pane .model-name {
+      font-size: .78rem; font-weight: 600; color: var(--accent);
+      margin-bottom: 8px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .tag {
+      display: inline-block;
+      padding: 2px 7px; border-radius: 999px;
+      font-size: .65rem; font-weight: 700;
+    }
+    .tag-correct { background: rgba(0,229,160,.15); color: var(--correct); }
+    .tag-wrong   { background: rgba(239,68,68,.15);  color: var(--wrong); }
+    .output-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: .72rem;
+      color: var(--text-2);
+      white-space: pre-wrap;
+      max-height: 220px;
+      overflow-y: auto;
+      background: var(--bg-3);
+      border-radius: var(--radius-sm);
+      padding: 10px;
+      line-height: 1.5;
+    }
+    .output-meta {
+      display: flex; gap: 16px;
+      margin-top: 10px;
+      font-size: .72rem; color: var(--text-3);
+    }
+    .output-meta strong { color: var(--text-2); }
+
+    /* ── Per-class F1 bars ─────────────────────────────────────── */
+    .f1-legend {
+      display: flex; flex-wrap: wrap; gap: 10px;
+      padding: 10px 16px 0;
+      font-size: .72rem;
+    }
+    .f1-legend-item {
+      display: flex; align-items: center; gap: 5px;
+    }
+    .f1-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+    /* ── Calibration ───────────────────────────────────────────── */
+    .ece-badge {
+      display: inline-block;
+      padding: 4px 10px; border-radius: var(--radius-sm);
+      font-size: .8rem; font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .ece-good    { background: rgba(0,229,160,.15); color: var(--correct); }
+    .ece-medium  { background: rgba(245,158,11,.15); color: var(--accent-3); }
+    .ece-poor    { background: rgba(239,68,68,.15);  color: var(--wrong); }
+
+    /* ── Tooltips ──────────────────────────────────────────────── */
+    [data-tip] { position: relative; cursor: help; }
+    [data-tip]::after {
+      content: attr(data-tip);
+      position: absolute;
+      bottom: 100%; left: 50%; transform: translateX(-50%);
+      background: #1e293b;
+      color: var(--text);
+      font-size: .72rem;
+      padding: 5px 8px;
+      border-radius: 6px;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity .15s;
+      z-index: 99;
+    }
+    [data-tip]:hover::after { opacity: 1; }
+
+    /* ── Glow pulse on top model ───────────────────────────────── */
+    @keyframes pulse-border {
+      0%,100% { box-shadow: 0 0 0 0 rgba(0,229,160,0); }
+      50%      { box-shadow: 0 0 0 4px rgba(0,229,160,.15); }
+    }
+    tbody tr.top-row { animation: pulse-border 3s infinite; }
+
+    /* ── Loading spinner ───────────────────────────────────────── */
+    .spinner {
+      width: 24px; height: 24px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Smooth fade-in ────────────────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in { animation: fadeUp .4s ease forwards; }
+    .delay-1 { animation-delay: .05s; }
+    .delay-2 { animation-delay: .10s; }
+    .delay-3 { animation-delay: .15s; }
+    .delay-4 { animation-delay: .20s; }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════ UPLOAD ZONE ═══════════════════════════════ -->
+<div id="upload-zone">
+  <div class="upload-card" id="drop-zone">
+    <div class="upload-icon">📊</div>
+    <h2>5G RCA Evaluation Dashboard</h2>
+    <p>Load a benchmark results JSON file to explore model performance,<br>
+       confusion matrices, calibration, and side-by-side outputs.</p>
+    <button class="btn btn-primary" onclick="document.getElementById('file-input').click()">
+      📂 Load Results JSON
+    </button>
+    <input type="file" id="file-input" accept=".json">
+    <p style="margin-top:18px; font-size:.72rem; color:var(--text-3);">
+      Or drag-and-drop your <code>results/benchmark_*.json</code> file here
+    </p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ HEADER ════════════════════════════════════ -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">📡</div>
+    <div class="logo-text">
+      <h1>5G RCA · Model Evaluation</h1>
+      <p>Multi-model benchmark · Root cause classification accuracy</p>
+    </div>
+  </div>
+  <div class="header-actions">
+    <span id="run-meta"></span>
+    <button class="btn btn-secondary" onclick="document.getElementById('file-input').click()">
+      🔄 Load New Results
+    </button>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════ DASHBOARD ═════════════════════════════════ -->
+<div id="dashboard">
+<div class="container">
+
+  <!-- Stats row -->
+  <div class="stats-grid fade-in" id="stats-grid"></div>
+
+  <!-- ── Leaderboard ───────────────────────────────────────────── -->
+  <div class="section fade-in delay-1">
+    <div class="section-header">
+      <div class="section-title"><span>🏆</span> Model Leaderboard</div>
+    </div>
+    <div class="card">
+      <div class="table-wrap">
+        <table id="leaderboard-table">
+          <thead>
+            <tr>
+              <th onclick="sortTable('rank')">#</th>
+              <th onclick="sortTable('model')">Model</th>
+              <th onclick="sortTable('type')">Type</th>
+              <th onclick="sortTable('accuracy')" class="sorted" data-tip="Exact match C1–C8">Accuracy ↓</th>
+              <th onclick="sortTable('macro_f1')" data-tip="Macro-averaged F1 across all classes">Macro F1</th>
+              <th onclick="sortTable('ece')" data-tip="Expected Calibration Error — lower is better">ECE ↓</th>
+              <th onclick="sortTable('avg_latency_ms')">Avg Latency</th>
+              <th onclick="sortTable('p95_latency_ms')">p95 Latency</th>
+              <th onclick="sortTable('rag_hit_rate')">RAG Hit%</th>
+              <th onclick="sortTable('avg_tokens')">Avg Tokens</th>
+              <th>Acc Meter</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboard-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Accuracy + Latency charts ─────────────────────────────── -->
+  <div class="grid-2 section fade-in delay-2">
+    <div class="card">
+      <div class="card-body" style="padding-bottom:8px">
+        <div class="section-title" style="margin-bottom:12px"><span>🎯</span> Accuracy by Model</div>
+      </div>
+      <div class="chart-wrap"><canvas id="acc-chart" height="200"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-body" style="padding-bottom:8px">
+        <div class="section-title" style="margin-bottom:12px"><span>⚡</span> Latency Distribution (ms)</div>
+      </div>
+      <div class="chart-wrap"><canvas id="latency-chart" height="200"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ── Per-class F1 radar + Calibration ─────────────────────── -->
+  <div class="grid-2 section fade-in delay-3">
+    <div class="card">
+      <div class="card-body" style="padding-bottom:8px">
+        <div class="section-title" style="margin-bottom:4px"><span>🕸️</span> Per-Class F1 (Radar)</div>
+        <div class="f1-legend" id="f1-legend"></div>
+      </div>
+      <div class="chart-wrap" style="max-height:320px">
+        <canvas id="radar-chart" height="280"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body" style="padding-bottom:8px">
+        <div class="section-title" style="margin-bottom:8px"><span>📐</span> Calibration (Reliability Diagram)</div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px" id="ece-badges"></div>
+      </div>
+      <div class="chart-wrap"><canvas id="calib-chart" height="260"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ── Confusion matrix ──────────────────────────────────────── -->
+  <div class="section fade-in delay-3">
+    <div class="section-header">
+      <div class="section-title"><span>🔢</span> Confusion Matrix</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <label style="font-size:.8rem;color:var(--text-2)">Model:</label>
+        <select id="cm-model-select" onchange="renderCM()"></select>
+      </div>
+    </div>
+    <div class="card">
+      <div class="cm-wrap" id="cm-container"></div>
+    </div>
+  </div>
+
+  <!-- ── RAG Quality ────────────────────────────────────────────── -->
+  <div class="grid-2 section fade-in delay-4">
+    <div class="card">
+      <div class="card-body" style="padding-bottom:8px">
+        <div class="section-title" style="margin-bottom:12px"><span>🔍</span> RAG Quality per Model</div>
+      </div>
+      <div class="card-body" id="rag-bars"></div>
+    </div>
+    <div class="card">
+      <div class="card-body" style="padding-bottom:8px">
+        <div class="section-title" style="margin-bottom:12px"><span>🪙</span> Token Efficiency</div>
+      </div>
+      <div class="chart-wrap"><canvas id="token-chart" height="220"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ── Output viewer ─────────────────────────────────────────── -->
+  <div class="section fade-in delay-4">
+    <div class="section-header">
+      <div class="section-title"><span>🔬</span> Side-by-Side Output Viewer</div>
+    </div>
+    <div id="output-viewer">
+      <div class="viewer-controls">
+        <label>Scenario:</label>
+        <select id="scenario-select" onchange="renderOutputViewer()"></select>
+        <label style="margin-left:8px">Filter:</label>
+        <select id="filter-select" onchange="populateScenarioSelect(); renderOutputViewer()">
+          <option value="all">All scenarios</option>
+          <option value="wrong">Disagreements only</option>
+          <option value="correct">All correct only</option>
+        </select>
+        <span style="margin-left:auto; font-size:.75rem; color:var(--text-3)" id="viewer-meta"></span>
+      </div>
+      <div class="output-grid" id="output-grid"></div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+</div><!-- /dashboard -->
+
+<!-- ═══════════════════════════════ SCRIPTS ═══════════════════════════════════ -->
+<script>
+// ── Global state ──────────────────────────────────────────────────────────────
+let DATA = null;
+let MODELS = [];
+let SCENARIOS = [];  // merged calls [{scenario_id, true_label, calls:{model:call}}]
+
+const LABEL_NAMES = {
+  C1: 'Coverage Tilt',
+  C2: 'Overshooting',
+  C3: 'Neighbor TP',
+  C4: 'Overlap Cov.',
+  C5: 'Handover Deg.',
+  C6: 'PCI Collision',
+  C7: 'Mobility Speed',
+  C8: 'RB Scheduling',
+};
+const CLASS_COLORS = {
+  C1:'#0084ff', C2:'#00e5a0', C3:'#f59e0b', C4:'#a855f7',
+  C5:'#ef4444', C6:'#06b6d4', C7:'#ec4899', C8:'#84cc16',
+};
+const MODEL_PALETTE = [
+  '#00e5a0','#0084ff','#f59e0b','#a855f7','#ef4444','#06b6d4'
+];
+
+// Sort state
+let sortKey = 'accuracy';
+let sortAsc = false;
+
+// ── File handling ─────────────────────────────────────────────────────────────
+document.getElementById('file-input').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (file) loadFile(file);
+});
+const dropZone = document.getElementById('drop-zone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) loadFile(file);
+});
+
+function loadFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      DATA = JSON.parse(e.target.result);
+      processData();
+    } catch(err) {
+      alert('Failed to parse JSON: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ── Data processing ────────────────────────────────────────────────────────────
+function processData() {
+  MODELS = Object.keys(DATA.models);
+
+  // Merge calls by scenario_id
+  const scenarioMap = {};
+  for (const [model, mdata] of Object.entries(DATA.models)) {
+    for (const call of mdata.calls) {
+      if (!scenarioMap[call.scenario_id]) {
+        scenarioMap[call.scenario_id] = { scenario_id: call.scenario_id, true_label: call.true_label, calls: {} };
+      }
+      scenarioMap[call.scenario_id].calls[model] = call;
+    }
+  }
+  SCENARIOS = Object.values(scenarioMap);
+
+  // Show dashboard
+  document.getElementById('upload-zone').classList.add('hidden');
+  const dash = document.getElementById('dashboard');
+  dash.classList.add('visible');
+
+  // Run-meta
+  document.getElementById('run-meta').textContent =
+    `Run ${DATA.run_id} · ${DATA.n_scenarios} scenarios · ${MODELS.length} models`;
+
+  renderAll();
+}
+
+function renderAll() {
+  renderStats();
+  renderLeaderboard();
+  renderAccChart();
+  renderLatencyChart();
+  renderRadarChart();
+  renderCalibChart();
+  populateCMSelect();
+  renderCM();
+  renderRAGBars();
+  renderTokenChart();
+  populateScenarioSelect();
+  renderOutputViewer();
+}
+
+// ── Stats row ─────────────────────────────────────────────────────────────────
+function renderStats() {
+  const bestModel = MODELS.reduce((a, b) =>
+    (DATA.models[a].metrics.accuracy > DATA.models[b].metrics.accuracy ? a : b));
+  const bm = DATA.models[bestModel].metrics;
+  const accs = MODELS.map(m => DATA.models[m].metrics.accuracy);
+  const avgAcc = accs.reduce((a,b)=>a+b,0)/accs.length;
+  const avgLatency = MODELS.map(m=>DATA.models[m].metrics.avg_latency_ms).reduce((a,b)=>a+b,0)/MODELS.length;
+  const avgECE = MODELS.map(m=>DATA.models[m].metrics.ece).reduce((a,b)=>a+b,0)/MODELS.length;
+  const avgRAG = MODELS.map(m=>DATA.models[m].metrics.rag_hit_rate).reduce((a,b)=>a+b,0)/MODELS.length;
+
+  const stats = [
+    { label:'Best Accuracy', value: (bm.accuracy*100).toFixed(1)+'%', sub: bestModel.split('-')[0], color:'#00e5a0' },
+    { label:'Avg Accuracy',  value: (avgAcc*100).toFixed(1)+'%',      sub: `${MODELS.length} models`,  color:'#0084ff' },
+    { label:'Scenarios',     value: DATA.n_scenarios,                  sub: DATA.dataset,               color:'#f59e0b' },
+    { label:'Avg Latency',   value: Math.round(avgLatency)+'ms',       sub: 'across models',            color:'#a855f7' },
+    { label:'Avg ECE',       value: avgECE.toFixed(3),                 sub: 'calibration error',        color:'#ef4444' },
+    { label:'RAG Hit Rate',  value: (avgRAG*100).toFixed(0)+'%',       sub: 'retrieval success',        color:'#06b6d4' },
+  ];
+
+  document.getElementById('stats-grid').innerHTML = stats.map(s => `
+    <div class="stat-card" style="--accent-clr:${s.color}">
+      <div class="label">${s.label}</div>
+      <div class="value">${s.value}</div>
+      <div class="sub">${s.sub}</div>
+    </div>`).join('');
+}
+
+// ── Leaderboard ───────────────────────────────────────────────────────────────
+function sortTable(key) {
+  if (sortKey === key) sortAsc = !sortAsc;
+  else { sortKey = key; sortAsc = false; }
+  renderLeaderboard();
+  document.querySelectorAll('thead th').forEach(th => th.classList.remove('sorted'));
+}
+
+function renderLeaderboard() {
+  const rows = MODELS.map((m, i) => {
+    const md = DATA.models[m];
+    return { model: m, rank: i, ...md.metrics, type: md.model_type, params: md.model_params };
+  });
+  const sorted = rows.sort((a, b) => {
+    let va = a[sortKey], vb = b[sortKey];
+    if (typeof va === 'string') { va = va.toLowerCase(); vb = vb.toLowerCase(); }
+    if (va === undefined) va = 0; if (vb === undefined) vb = 0;
+    return sortAsc ? (va > vb ? 1 : -1) : (va < vb ? 1 : -1);
+  });
+
+  const badgeClass = t => t==='LLM'?'badge-llm':t==='MoE'?'badge-moe':'badge-slm';
+  const eceClass = e => e < .05 ? 'ece-good' : e < .12 ? 'ece-medium' : 'ece-poor';
+
+  document.getElementById('leaderboard-body').innerHTML = sorted.map((r, i) => `
+    <tr class="${i===0?'top-row':''}">
+      <td style="color:var(--text-3)">${i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1}</td>
+      <td style="font-weight:600;font-family:'JetBrains Mono',monospace;font-size:.8rem">${r.model}</td>
+      <td><span class="badge ${badgeClass(r.type)}">${r.type}</span></td>
+      <td style="font-weight:700;color:${r.accuracy>.8?'var(--correct)':r.accuracy>.6?'var(--accent-3)':'var(--wrong)'}">${(r.accuracy*100).toFixed(1)}%</td>
+      <td>${r.macro_f1.toFixed(3)}</td>
+      <td><span class="ece-badge ${eceClass(r.ece)}">${r.ece.toFixed(3)}</span></td>
+      <td>${r.avg_latency_ms.toFixed(0)}ms</td>
+      <td>${r.p95_latency_ms}ms</td>
+      <td>${(r.rag_hit_rate*100).toFixed(0)}%</td>
+      <td>${r.avg_tokens}</td>
+      <td style="min-width:100px">
+        <div class="meter"><div class="meter-fill" style="width:${(r.accuracy*100).toFixed(1)}%"></div></div>
+      </td>
+    </tr>`).join('');
+}
+
+// ── Accuracy Chart ─────────────────────────────────────────────────────────────
+let accChart;
+function renderAccChart() {
+  const ctx = document.getElementById('acc-chart').getContext('2d');
+  if (accChart) accChart.destroy();
+  const accs = MODELS.map(m => +(DATA.models[m].metrics.accuracy*100).toFixed(1));
+  accChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: MODELS.map(m => m.split('-')[0]),
+      datasets: [{
+        label: 'Accuracy %',
+        data: accs,
+        backgroundColor: MODELS.map((_, i) => MODEL_PALETTE[i % MODEL_PALETTE.length] + '33'),
+        borderColor:      MODELS.map((_, i) => MODEL_PALETTE[i % MODEL_PALETTE.length]),
+        borderWidth: 2,
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: (items) => MODELS[items[0].dataIndex],
+            label: (item) => ` ${item.raw}% accuracy`
+          }
+        }
+      },
+      scales: {
+        y: {
+          min: 0, max: 100,
+          grid: { color: '#1e2a42' },
+          ticks: { color: '#64748b', callback: v => v + '%' }
+        },
+        x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 10 } } }
+      }
+    }
+  });
+}
+
+// ── Latency Chart ─────────────────────────────────────────────────────────────
+let latChart;
+function renderLatencyChart() {
+  const ctx = document.getElementById('latency-chart').getContext('2d');
+  if (latChart) latChart.destroy();
+  latChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: MODELS.map(m => m.split('-')[0]),
+      datasets: [
+        {
+          label: 'p50',
+          data: MODELS.map(m => DATA.models[m].metrics.p50_latency_ms),
+          backgroundColor: '#0084ff44',
+          borderColor: '#0084ff',
+          borderWidth: 2,
+          borderRadius: 4,
+          borderSkipped: false,
+        },
+        {
+          label: 'p95',
+          data: MODELS.map(m => DATA.models[m].metrics.p95_latency_ms),
+          backgroundColor: '#ef444444',
+          borderColor: '#ef4444',
+          borderWidth: 2,
+          borderRadius: 4,
+          borderSkipped: false,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          display: true,
+          labels: { color: '#94a3b8', font: { size: 11 }, boxWidth: 12 }
+        }
+      },
+      scales: {
+        y: {
+          grid: { color: '#1e2a42' },
+          ticks: { color: '#64748b', callback: v => v + 'ms' }
+        },
+        x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 10 } } }
+      }
+    }
+  });
+}
+
+// ── Radar chart ────────────────────────────────────────────────────────────────
+let radarChart;
+function renderRadarChart() {
+  const ctx = document.getElementById('radar-chart').getContext('2d');
+  if (radarChart) radarChart.destroy();
+  const labels = ['C1','C2','C3','C4','C5','C6','C7','C8'].map(l => LABEL_NAMES[l] || l);
+  const datasets = MODELS.map((m, i) => {
+    const pf = DATA.models[m].metrics.per_class_f1 || {};
+    return {
+      label: m.split('-')[0],
+      data: ['C1','C2','C3','C4','C5','C6','C7','C8'].map(l => (pf[l] || 0) * 100),
+      backgroundColor: MODEL_PALETTE[i % MODEL_PALETTE.length] + '18',
+      borderColor:     MODEL_PALETTE[i % MODEL_PALETTE.length],
+      borderWidth: 2,
+      pointBackgroundColor: MODEL_PALETTE[i % MODEL_PALETTE.length],
+      pointRadius: 3,
+    };
+  });
+
+  radarChart = new Chart(ctx, {
+    type: 'radar',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        r: {
+          min: 0, max: 100,
+          grid:        { color: '#1e2a42' },
+          angleLines:  { color: '#1e2a42' },
+          pointLabels: { color: '#94a3b8', font: { size: 10 } },
+          ticks:       { color: '#64748b', backdropColor: 'transparent', stepSize: 25 }
+        }
+      }
+    }
+  });
+
+  // Legend
+  document.getElementById('f1-legend').innerHTML = MODELS.map((m,i) => `
+    <div class="f1-legend-item">
+      <div class="f1-dot" style="background:${MODEL_PALETTE[i%MODEL_PALETTE.length]}"></div>
+      <span style="color:var(--text-2)">${m.split('-')[0]}</span>
+    </div>`).join('');
+}
+
+// ── Calibration Chart ─────────────────────────────────────────────────────────
+let calibChart;
+function renderCalibChart() {
+  const ctx = document.getElementById('calib-chart').getContext('2d');
+  if (calibChart) calibChart.destroy();
+
+  const N_BINS = 10;
+  const binEdges = Array.from({length: N_BINS}, (_, i) => ((i + .5) / N_BINS).toFixed(1));
+
+  const datasets = [];
+  const eceBadgesHtml = [];
+
+  MODELS.forEach((m, i) => {
+    const calls = DATA.models[m].calls || [];
+    const bins = Array.from({length: N_BINS}, () => []);
+    calls.forEach(c => {
+      const idx = Math.min(Math.floor((c.confidence || 0) * N_BINS), N_BINS - 1);
+      bins[idx].push(c.predicted_label === c.true_label ? 1 : 0);
+    });
+    const binAcc = bins.map(b => b.length > 0 ? b.reduce((a,v)=>a+v,0)/b.length : null);
+
+    datasets.push({
+      label: m.split('-')[0],
+      data: binAcc.map((v, bi) => ({ x: (bi + .5) / N_BINS, y: v })),
+      borderColor: MODEL_PALETTE[i % MODEL_PALETTE.length],
+      backgroundColor: MODEL_PALETTE[i % MODEL_PALETTE.length] + '33',
+      tension: 0.3,
+      spanGaps: true,
+      pointRadius: 4,
+    });
+
+    const ece = DATA.models[m].metrics.ece;
+    const cls = ece < .05 ? 'ece-good' : ece < .12 ? 'ece-medium' : 'ece-poor';
+    eceBadgesHtml.push(`<span class="ece-badge ${cls}" title="${m}">${m.split('-')[0]}: ECE=${ece.toFixed(3)}</span>`);
+  });
+
+  // Perfect calibration line
+  datasets.push({
+    label: 'Perfect',
+    data: [0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1.0].map(v => ({x:v, y:v})),
+    borderColor: '#ffffff22',
+    borderDash: [6, 4],
+    borderWidth: 1.5,
+    pointRadius: 0,
+    tension: 0,
+  });
+
+  calibChart = new Chart(ctx, {
+    type: 'line',
+    data: { datasets },
+    options: {
+      responsive: true,
+      parsing: false,
+      plugins: {
+        legend: { display: true, labels: { color: '#94a3b8', font: {size:10}, boxWidth: 10 } }
+      },
+      scales: {
+        x: {
+          type: 'linear', min: 0, max: 1,
+          title: { display: true, text: 'Predicted Confidence', color: '#64748b', font:{size:10} },
+          grid: { color: '#1e2a42' },
+          ticks: { color: '#64748b', stepSize: 0.2 }
+        },
+        y: {
+          min: 0, max: 1,
+          title: { display: true, text: 'Actual Accuracy', color: '#64748b', font:{size:10} },
+          grid: { color: '#1e2a42' },
+          ticks: { color: '#64748b', stepSize: 0.2 }
+        }
+      }
+    }
+  });
+
+  document.getElementById('ece-badges').innerHTML = eceBadgesHtml.join('');
+}
+
+// ── Confusion Matrix ───────────────────────────────────────────────────────────
+function populateCMSelect() {
+  const sel = document.getElementById('cm-model-select');
+  sel.innerHTML = MODELS.map(m => `<option value="${m}">${m}</option>`).join('');
+}
+
+function renderCM() {
+  const model = document.getElementById('cm-model-select').value;
+  if (!model || !DATA.models[model]) return;
+  const cm = DATA.models[model].metrics.confusion_matrix || {};
+  const labels = ['C1','C2','C3','C4','C5','C6','C7','C8'];
+
+  // Find max value for heat scaling
+  let maxVal = 1;
+  labels.forEach(t => labels.forEach(p => { maxVal = Math.max(maxVal, (cm[t]?.[p] || 0)); }));
+
+  let html = `<table class="cm-table">
+    <thead>
+      <tr>
+        <th></th>
+        <th colspan="${labels.length}" class="cm-axis-label">Predicted →</th>
+      </tr>
+      <tr>
+        <th style="color:var(--text-3);writing-mode:vertical-rl;transform:rotate(180deg);padding:8px 2px">True ↓</th>
+        ${labels.map(l => `<th title="${LABEL_NAMES[l]}">${l}</th>`).join('')}
+      </tr>
+    </thead><tbody>`;
+
+  labels.forEach(t => {
+    html += `<tr><th title="${LABEL_NAMES[t]}">${t}</th>`;
+    labels.forEach(p => {
+      const v = (cm[t]?.[p] || 0);
+      const isCorrect = t === p;
+      const intensity = maxVal > 0 ? v / maxVal : 0;
+      let bg, fg;
+      if (isCorrect) {
+        bg = `rgba(0,229,160,${0.1 + intensity * 0.7})`;
+        fg = intensity > 0.5 ? '#000' : '#00e5a0';
+      } else if (v > 0) {
+        bg = `rgba(239,68,68,${0.1 + intensity * 0.6})`;
+        fg = intensity > 0.5 ? '#fff' : '#ef4444';
+      } else {
+        bg = 'transparent';
+        fg = 'var(--text-3)';
+      }
+      html += `<td style="background:${bg};color:${fg}" title="${LABEL_NAMES[t]} → ${LABEL_NAMES[p]}: ${v}">${v || '·'}</td>`;
+    });
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  html += `<p style="margin-top:14px;font-size:.72rem;color:var(--text-3)">
+    🟢 Correct predictions &nbsp;|&nbsp; 🔴 Misclassifications &nbsp;|&nbsp;
+    Model: <strong style="color:var(--text-2)">${model}</strong>
+    &nbsp;·&nbsp; Accuracy: <strong style="color:var(--accent)">${(DATA.models[model].metrics.accuracy*100).toFixed(1)}%</strong>
+  </p>`;
+
+  document.getElementById('cm-container').innerHTML = html;
+}
+
+// ── RAG Bars ──────────────────────────────────────────────────────────────────
+function renderRAGBars() {
+  const container = document.getElementById('rag-bars');
+  const rows = MODELS.map(m => ({
+    model: m,
+    hit_rate: DATA.models[m].metrics.rag_hit_rate || 0,
+    avg_score: DATA.models[m].metrics.rag_avg_score || 0,
+    avg_chunks: DATA.models[m].metrics.avg_rag_chunks || 0,
+  }));
+
+  container.innerHTML = `
+    <div style="margin-bottom:6px;font-size:.72rem;color:var(--text-3)">
+      Hit Rate (% retrievals with ≥1 chunk) · Avg Score (cosine similarity)
+    </div>
+    ${rows.map((r, i) => `
+      <div class="rag-bar-row">
+        <div class="rag-bar-label" title="${r.model}">${r.model.split('-')[0]}</div>
+        <div class="rag-bar-track">
+          <div class="rag-bar-fill" style="width:${(r.hit_rate*100).toFixed(0)}%;background:${MODEL_PALETTE[i%MODEL_PALETTE.length]}"></div>
+        </div>
+        <div class="rag-bar-val" style="color:${MODEL_PALETTE[i%MODEL_PALETTE.length]}">${(r.hit_rate*100).toFixed(0)}%</div>
+        <div class="rag-bar-val" style="color:var(--text-3)">${r.avg_score.toFixed(2)}↑</div>
+        <div class="rag-bar-val" style="color:var(--text-3)">${r.avg_chunks.toFixed(1)}☰</div>
+      </div>`).join('')}
+  `;
+}
+
+// ── Token chart ───────────────────────────────────────────────────────────────
+let tokenChart;
+function renderTokenChart() {
+  const ctx = document.getElementById('token-chart').getContext('2d');
+  if (tokenChart) tokenChart.destroy();
+  tokenChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: MODELS.map(m => m.split('-')[0]),
+      datasets: [
+        {
+          label: 'Avg Tokens',
+          data: MODELS.map(m => DATA.models[m].metrics.avg_tokens || 0),
+          backgroundColor: MODEL_PALETTE.map(c => c + '44'),
+          borderColor: MODEL_PALETTE,
+          borderWidth: 2,
+          borderRadius: 4,
+          borderSkipped: false,
+          yAxisID: 'y',
+        },
+        {
+          label: 'Token Efficiency (tokens/correct)',
+          data: MODELS.map(m => DATA.models[m].metrics.token_efficiency || 0),
+          type: 'line',
+          borderColor: '#f59e0b',
+          backgroundColor: '#f59e0b22',
+          borderWidth: 2,
+          pointRadius: 5,
+          yAxisID: 'y2',
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: true, labels: { color: '#94a3b8', font:{size:10}, boxWidth:10 } }
+      },
+      scales: {
+        y:  { grid: { color: '#1e2a42' }, ticks: { color: '#64748b' }, position: 'left' },
+        y2: { grid: { display: false }, ticks: { color: '#f59e0b' }, position: 'right' },
+        x:  { grid: { display: false }, ticks: { color: '#94a3b8', font:{size:10} } }
+      }
+    }
+  });
+}
+
+// ── Output Viewer ─────────────────────────────────────────────────────────────
+function populateScenarioSelect() {
+  const filter = document.getElementById('filter-select').value;
+  const sel = document.getElementById('scenario-select');
+
+  let filtered = SCENARIOS;
+  if (filter === 'wrong') {
+    filtered = SCENARIOS.filter(s =>
+      MODELS.some(m => s.calls[m] && s.calls[m].predicted_label !== s.true_label)
+    );
+  } else if (filter === 'correct') {
+    filtered = SCENARIOS.filter(s =>
+      MODELS.every(m => !s.calls[m] || s.calls[m].predicted_label === s.true_label)
+    );
+  }
+
+  sel.innerHTML = filtered.map(s =>
+    `<option value="${s.scenario_id}">${s.scenario_id} [${s.true_label}]</option>`
+  ).join('');
+
+  document.getElementById('viewer-meta').textContent =
+    `${filtered.length} / ${SCENARIOS.length} scenarios`;
+}
+
+function renderOutputViewer() {
+  const sel = document.getElementById('scenario-select');
+  if (!sel.value) return;
+  const scenario = SCENARIOS.find(s => s.scenario_id === sel.value);
+  if (!scenario) return;
+
+  const grid = document.getElementById('output-grid');
+  grid.innerHTML = MODELS.map((m, i) => {
+    const call = scenario.calls[m];
+    if (!call) return `
+      <div class="output-pane">
+        <div class="model-name" style="color:var(--text-3)">${m}<span class="tag" style="background:#1e2a42;color:var(--text-3)">N/A</span></div>
+        <div class="output-text">No data for this model in this run.</div>
+      </div>`;
+
+    const isCorrect = call.predicted_label === call.true_label;
+    const tagClass = isCorrect ? 'tag-correct' : 'tag-wrong';
+    const tagText  = isCorrect ? `✓ ${call.predicted_label}` : `✗ pred=${call.predicted_label}`;
+
+    return `
+      <div class="output-pane">
+        <div class="model-name" style="color:${MODEL_PALETTE[i%MODEL_PALETTE.length]}">
+          ${m.split('-')[0]}
+          <span class="tag ${tagClass}">${tagText}</span>
+        </div>
+        <div class="output-text">${escHtml(call.raw_summary || call.specific_cause || '(no output recorded)')}</div>
+        <div class="output-meta">
+          <span><strong>Conf</strong> ${(call.confidence*100).toFixed(0)}%</span>
+          <span><strong>Latency</strong> ${call.latency_ms}ms</span>
+          <span><strong>Tokens</strong> ${call.tokens_used}</span>
+          <span><strong>RAG</strong> ${call.rag_chunks} chunks</span>
+          <span><strong>Steps</strong> ${call.reasoning_steps}</span>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Chart.js defaults ─────────────────────────────────────────────────────────
+Chart.defaults.color = '#94a3b8';
+Chart.defaults.borderColor = '#1e2a42';
+Chart.defaults.font.family = "'Inter', sans-serif";
+</script>
+</body>
+</html>

@@ -1,0 +1,424 @@
+{
+  "source_document": {
+    "specification": "3GPP TS 38.331",
+    "version": "18.8.0",
+    "release": "Release 18",
+    "title": "NR Radio Resource Control (RRC) Protocol Specification",
+    "extraction_date": "2026-05-24"
+  },
+  "handover_procedures": {
+    "intra_nr_handover": {
+      "section_reference": "5.3.5 RRC reconfiguration, 5.3.5.5.2 Reconfiguration with sync",
+      "description": "Intra-NR handover is performed via RRCReconfiguration message with reconfigurationWithSync IE",
+      "trigger_conditions": [
+        "Network-initiated based on measurement reports",
+        "Measurement event A3 (Neighbour becomes offset better than SpCell)",
+        "Measurement event A5 (SpCell becomes worse than threshold1 AND neighbour becomes better than threshold2)",
+        "Measurement event A4 (Neighbour becomes better than threshold)"
+      ],
+      "procedure_steps": [
+        "1. Network sends RRCReconfiguration with reconfigurationWithSync in spCellConfig",
+        "2. UE starts timer T304 with configured value",
+        "3. UE synchronizes to DL of target SpCell",
+        "4. UE acquires MIB of target SpCell",
+        "5. UE applies new configuration including new C-RNTI (newUE-Identity)",
+        "6. UE initiates Random Access procedure to target cell",
+        "7. Upon successful RA completion, UE stops T304 and sends RRCReconfigurationComplete",
+        "8. UE releases dedicated preambles if configured"
+      ],
+      "failure_handling": {
+        "on_t304_expiry": [
+          "Revert to source PCell configuration",
+          "Store handover failure information in VarRLF-Report",
+          "Initiate RRC connection re-establishment procedure (5.3.7)"
+        ],
+        "on_inability_to_comply": [
+          "Continue using configuration prior to RRCReconfiguration",
+          "Initiate RRC connection re-establishment if AS security activated"
+        ]
+      },
+      "related_kpis": {
+        "handover_success_rate": {
+          "description": "Ratio of successful handovers to total handover attempts",
+          "measurement_point": "T304 stop vs T304 expiry",
+          "target": ">95%"
+        },
+        "handover_interruption_time": {
+          "description": "Time from last successful data on source to first successful data on target",
+          "measurement_point": "T304 start to RA completion",
+          "target": "<50ms for intra-frequency"
+        },
+        "rsrp_dbm": {
+          "description": "Reference Signal Received Power at handover execution",
+          "measurement_point": "MeasurementReport triggering HO",
+          "typical_range": "-140 to -44 dBm"
+        }
+      },
+      "failure_symptoms": {
+        "late_handover": {
+          "description": "HO triggered too late, UE experiences RLF before or during HO",
+          "indicators": ["T310 expiry before HO completion", "Low RSRP at HO trigger", "RLF-Report with failedPCellId = source cell"],
+          "root_causes": ["A3/A5 offset too high", "timeToTrigger too long", "Hysteresis too high", "Coverage gap"],
+          "recommended_actions": ["Reduce a3-Offset", "Reduce timeToTrigger", "Reduce hysteresis", "Deploy new site or adjust antenna tilt"]
+        },
+        "early_handover": {
+          "description": "HO triggered too early, target cell not optimal",
+          "indicators": ["Quick return to source cell (ping-pong)", "Low RSRP on target at HO completion"],
+          "root_causes": ["A3/A5 offset too low", "timeToTrigger too short", "Hysteresis too low"],
+          "recommended_actions": ["Increase a3-Offset", "Increase timeToTrigger", "Increase hysteresis"]
+        },
+        "ping_pong_handover": {
+          "description": "Repeated HO between two cells in short time",
+          "indicators": ["Multiple HO attempts between same cell pair within seconds", "VarSuccessHO-Report shows rapid cell changes"],
+          "root_causes": ["Similar signal strength from two cells", "Low hysteresis", "Antenna coverage overlap"],
+          "recommended_actions": ["Increase hysteresis", "Adjust antenna parameters", "Enable cell individual offset (CIO)"]
+        },
+        "handover_failure": {
+          "description": "HO execution fails, T304 expires",
+          "indicators": ["T304 expiry", "RLF-Report with handover failure", "RRC re-establishment attempt"],
+          "root_causes": ["Coverage gap between source and target", "Target cell congestion (RACH failure)", "Incorrect target cell configuration", "UE capability mismatch"],
+          "recommended_actions": ["Check target cell coverage", "Review RACH configuration", "Verify target cell configuration", "Check UE capabilities vs configuration"]
+        }
+      }
+    },
+    "inter_rat_handover": {
+      "section_reference": "5.4 Inter-RAT mobility, 5.4.2 Handover to NR, 5.4.3 Mobility from NR",
+      "description": "Handover between NR and other RATs (E-UTRA/LTE, UTRA-FDD)",
+      "handover_to_nr": {
+        "section": "5.4.2",
+        "trigger_conditions": [
+          "Source RAT (E-UTRA) measurement report indicating NR target is suitable",
+          "Event B1/B2 in source RAT"
+        ],
+        "procedure_steps": [
+          "1. Source RAT sends HO command with embedded NR RRCReconfiguration",
+          "2. UE processes RRCReconfiguration from other RAT",
+          "3. UE applies NR configuration and initiates RA to NR target",
+          "4. On failure, UE performs actions defined in source RAT specifications"
+        ]
+      },
+      "mobility_from_nr": {
+        "section": "5.4.3",
+        "message": "MobilityFromNRCommand",
+        "target_rats": ["E-UTRA/EPC", "E-UTRA/5GC", "UTRA-FDD"],
+        "procedure_steps": [
+          "1. Network sends MobilityFromNRCommand with target RAT info",
+          "2. UE stores handover failure info if available",
+          "3. UE releases NR radio resources",
+          "4. UE applies target RAT configuration",
+          "5. On success, UE notifies NR RRC layer",
+          "6. On failure, UE initiates NR RRC re-establishment"
+        ]
+      },
+      "failure_handling": {
+        "mobility_from_nr_failure": {
+          "section": "5.4.3.5",
+          "actions": [
+            "Store handover failure info in VarRLF-Report",
+            "Attempt NR RRC connection re-establishment",
+            "If re-establishment fails, go to RRC_IDLE"
+          ]
+        }
+      },
+      "related_kpis": {
+        "inter_rat_ho_success_rate": {
+          "description": "Successful inter-RAT HO / Total inter-RAT HO attempts"
+        },
+        "inter_rat_ho_latency_ms": {
+          "description": "Time from MobilityFromNRCommand to successful target RAT connection"
+        }
+      }
+    },
+    "conditional_handover_cho": {
+      "section_reference": "5.3.5.13 Conditional Reconfiguration",
+      "description": "Network pre-configures UE with candidate target cells; UE autonomously executes HO when conditions are met",
+      "types": {
+        "CHO": "Conditional Handover - MCG PCell change",
+        "CPA": "Conditional PSCell Addition",
+        "CPC": "Conditional PSCell Change",
+        "CPAC": "Conditional PSCell Addition/Change with SCG configuration"
+      },
+      "trigger_conditions": {
+        "supported_events": ["condEventA3", "condEventA4", "condEventA5", "condEventD1", "condEventD2", "condEventT1"],
+        "evaluation": "Entry conditions must be fulfilled during timeToTrigger for applicable cell"
+      },
+      "procedure_steps": [
+        "1. Network sends ConditionalReconfiguration in RRCReconfiguration with candidate configurations",
+        "2. UE stores configurations in VarConditionalReconfig",
+        "3. UE evaluates conditions for each candidate (5.3.5.13.4)",
+        "4. When condition fulfilled, UE selects triggered cell",
+        "5. UE applies stored condRRCReconfig and executes HO (5.3.5.13.5)",
+        "6. UE sends RRCReconfigurationComplete with selectedCondRRCReconfig"
+      ],
+      "key_parameters": {
+        "condReconfigId": "Unique identifier for conditional configuration",
+        "condExecutionCond": "List of measIds for condition evaluation",
+        "condRRCReconfig": "Stored RRCReconfiguration to apply when triggered",
+        "timeToTrigger": "Duration condition must be met"
+      },
+      "failure_handling": {
+        "inability_to_comply": "Continue using prior configuration; report via SCG failure info or re-establishment",
+        "t304_expiry_during_cho": "Revert to source config; store HO failure in VarRLF-Report with choCellId"
+      },
+      "benefits": [
+        "Reduced HO interruption time (UE can prepare multiple targets)",
+        "Improved reliability in challenging RF conditions",
+        "Reduced signaling latency (no real-time HO command needed)"
+      ],
+      "failure_symptoms": {
+        "cho_not_triggered": {
+          "indicators": ["Normal HO still occurring despite CHO config", "No triggered cells detected"],
+          "root_causes": ["Condition thresholds not matching RF conditions", "Candidate cells not suitable"],
+          "recommended_actions": ["Review CHO thresholds", "Verify candidate cell list", "Check measurement configuration"]
+        }
+      }
+    }
+  },
+  "timers": {
+    "T304": {
+      "section_reference": "ReconfigurationWithSync IE, 5.3.5.8.3",
+      "description": "Handover execution timer - started when reconfigurationWithSync applied",
+      "values": ["ms50", "ms100", "ms150", "ms200", "ms500", "ms1000", "ms2000", "ms10000"],
+      "start_condition": "When UE applies reconfigurationWithSync for MCG or non-deactivated SCG",
+      "stop_condition": "Successful Random Access completion to target cell OR successful LTM cell switch",
+      "expiry_action": {
+        "mcg": "Revert to source config; store HO failure info; initiate re-establishment",
+        "scg": "Report SCG reconfiguration failure via SCGFailureInformation"
+      },
+      "rca_relevance": {
+        "too_short_t304": {
+          "symptom": "High T304 expiry rate",
+          "root_cause": "T304 value insufficient for RA procedure completion",
+          "action": "Increase T304 value or optimize RACH parameters"
+        },
+        "too_long_t304": {
+          "symptom": "Extended service interruption on HO failure",
+          "root_cause": "T304 too conservative",
+          "action": "Reduce T304 to minimize recovery time"
+        }
+      }
+    },
+    "T310": {
+      "section_reference": "5.3.5.5.6 RLF Timers & Constants, 5.3.10",
+      "description": "Radio Link Failure detection timer",
+      "configuration": "Via rlf-TimersAndConstants in SpCellConfig or SIB1 (ue-TimersAndConstants)",
+      "start_condition": "N310 consecutive out-of-sync indications from physical layer",
+      "stop_condition": "N311 consecutive in-sync indications OR HO completion",
+      "expiry_action": "Declare Radio Link Failure; initiate RRC re-establishment",
+      "rca_relevance": {
+        "frequent_t310_expiry": {
+          "symptom": "High RLF rate",
+          "root_causes": ["Poor coverage", "Interference", "T310 too short", "N310 too low"],
+          "actions": ["Improve coverage", "Reduce interference", "Tune T310/N310/N311"]
+        }
+      }
+    },
+    "T311": {
+      "section_reference": "5.3.7 RRC connection re-establishment",
+      "description": "RRC connection re-establishment timer",
+      "configuration": "Via rlf-TimersAndConstants or SIB1",
+      "start_condition": "RRC re-establishment initiated after RLF or HO failure",
+      "expiry_action": "Go to RRC_IDLE; inform upper layers of RRC connection failure"
+    }
+  },
+  "measurement_events": {
+    "event_A3": {
+      "section_reference": "5.5.4.4",
+      "description": "Neighbour becomes offset better than SpCell",
+      "formula": {
+        "entering_condition": "Mn + Ofn + Ocn - Hys > Mp + Ofp + Ocp + Off",
+        "leaving_condition": "Mn + Ofn + Ocn + Hys < Mp + Ofp + Ocp + Off"
+      },
+      "parameters": {
+        "Mn": "Measurement result of neighbouring cell",
+        "Mp": "Measurement result of SpCell",
+        "Ofn": "Measurement object specific offset of neighbour (offsetMO)",
+        "Ofp": "Measurement object specific offset of SpCell",
+        "Ocn": "Cell specific offset of neighbour (cellIndividualOffset)",
+        "Ocp": "Cell specific offset of SpCell",
+        "Hys": "Hysteresis parameter (hysteresis in reportConfigNR)",
+        "Off": "Offset parameter (a3-Offset in reportConfigNR)"
+      },
+      "usage": "Primary event for intra-frequency and inter-frequency handover",
+      "rca_tuning": {
+        "a3_offset": {
+          "increase": "Delays HO trigger, reduces ping-pong, but risks late HO",
+          "decrease": "Earlier HO trigger, but risks ping-pong"
+        },
+        "hysteresis": {
+          "increase": "More stability, less ping-pong",
+          "decrease": "Faster response to changing conditions"
+        },
+        "time_to_trigger": {
+          "increase": "More filtering, stable decisions, but slower response",
+          "decrease": "Faster HO decisions, but more sensitive to transients"
+        }
+      }
+    },
+    "event_A5": {
+      "section_reference": "5.5.4.6",
+      "description": "SpCell becomes worse than threshold1 AND neighbour becomes better than threshold2",
+      "formula": {
+        "entering_condition_1": "Mp + Hys < Thresh1",
+        "entering_condition_2": "Mn + Ofn + Ocn - Hys > Thresh2",
+        "leaving_condition_1": "Mp - Hys > Thresh1",
+        "leaving_condition_2": "Mn + Ofn + Ocn + Hys < Thresh2"
+      },
+      "parameters": {
+        "Mp": "Measurement result of SpCell",
+        "Mn": "Measurement result of neighbouring cell",
+        "Thresh1": "a5-Threshold1 - SpCell quality threshold",
+        "Thresh2": "a5-Threshold2 - Neighbour quality threshold"
+      },
+      "usage": "Inter-frequency/inter-RAT handover when coverage-based trigger needed",
+      "rca_tuning": {
+        "a5_threshold1": {
+          "description": "SpCell degradation threshold",
+          "lower_value": "Earlier trigger when serving cell degrades",
+          "higher_value": "Later trigger, more tolerance for serving cell variation"
+        },
+        "a5_threshold2": {
+          "description": "Neighbour cell quality threshold",
+          "lower_value": "Accept lower quality neighbours",
+          "higher_value": "Only trigger when strong neighbour available"
+        }
+      }
+    }
+  },
+  "failure_reporting": {
+    "VarRLF_Report": {
+      "section_reference": "5.3.10.5, 5.7.10.2",
+      "description": "UE variable storing RLF and HO failure information",
+      "key_fields": {
+        "failedPCellId": "Identity of cell where failure occurred (global cell ID, tracking area, PCI, frequency)",
+        "measResultLastServCell": "Measurements of failed cell including RSRP, RSRQ, cell-level and beam-level results",
+        "measResultNeighCells": "Measurements of neighbour cells at time of failure",
+        "timeConnFailure": "Time from most recent successful HO or re-establishment to connection failure",
+        "timeUntilReconnection": "Time from failure to reconnection",
+        "connectionFailureType": "rlf, hof (handover failure), or daps-ho-failure",
+        "rlf-Cause": "Cause of RLF (t310-Expiry, randomAccessProblem, rlc-MaxNumRetx, beamFailureRecoveryFailure, etc.)",
+        "reconnectCellId": "Cell where UE reconnected after failure",
+        "choCellId": "For CHO failure - target CHO cell identity",
+        "previousPCellId": "Cell before failure (for HO failure - this is source cell)",
+        "locationInfo": "Location information if available (GPS, Bluetooth, WLAN, sensors)"
+      },
+      "retention": "UE may discard after 48 hours from failure detection",
+      "rca_usage": [
+        "Correlate failedPCellId with cell configuration issues",
+        "Analyze measResultLastServCell for coverage problems",
+        "Use timeConnFailure to identify patterns (too-early, too-late HO)",
+        "Compare previousPCellId to failedPCellId for HO problem identification"
+      ]
+    },
+    "VarSuccessHO_Report": {
+      "section_reference": "5.7.10.6",
+      "description": "UE variable storing successful handover information for MRO",
+      "key_fields": {
+        "sourcePCellId": "Source cell identity",
+        "targetPCellId": "Target cell identity",
+        "measResultListNR": "NR measurements at HO trigger",
+        "timeofInterruption": "HO interruption duration",
+        "thresholdPercentageT304": "T304 consumption percentage at HO completion"
+      },
+      "rca_usage": [
+        "Identify cells with high T304 consumption (potential HO delay issues)",
+        "Detect potential ping-pong patterns",
+        "Correlate with VarRLF-Report for complete HO analysis"
+      ]
+    }
+  },
+  "rca_troubleshooting_guide": {
+    "high_handover_failure_rate": {
+      "symptoms": ["Increased T304 expiry", "Many RRC re-establishments", "User complaints of call drops during mobility"],
+      "diagnostic_steps": [
+        "1. Collect VarRLF-Report data from UEs",
+        "2. Identify failedPCellId patterns (specific cells with high failure)",
+        "3. Analyze rlf-Cause distribution (RACH failure vs coverage)",
+        "4. Check measResultLastServCell for RSRP/RSRQ at failure",
+        "5. Compare T304 values with actual HO duration needs"
+      ],
+      "common_root_causes": {
+        "coverage_gap": {
+          "indicators": ["Low RSRP at failure", "Both source and target weak"],
+          "actions": ["Deploy new site", "Adjust antenna tilt/azimuth", "Increase power"]
+        },
+        "rach_congestion": {
+          "indicators": ["rlf-Cause = randomAccessProblem", "High target cell load"],
+          "actions": ["Tune RACH parameters", "Add dedicated preambles for HO", "Load balancing"]
+        },
+        "parameter_misconfiguration": {
+          "indicators": ["Consistent failure to specific target", "T304 always expires"],
+          "actions": ["Verify target cell configuration", "Check PCI/frequency consistency", "Review RACH config"]
+        }
+      }
+    },
+    "ping_pong_handover": {
+      "symptoms": ["Rapid HO between cell pair", "Low inter-HO duration", "Increased signaling load"],
+      "diagnostic_steps": [
+        "1. Analyze HO statistics for cell pairs with high bidirectional HO",
+        "2. Check successHO-Report for time patterns",
+        "3. Review A3/A5 parameters for involved cells",
+        "4. Compare RSRP levels between involved cells"
+      ],
+      "common_root_causes": {
+        "similar_signal_levels": {
+          "indicators": ["RSRP difference < 3dB consistently"],
+          "actions": ["Increase hysteresis", "Enable CIO", "Adjust antenna parameters"]
+        },
+        "low_hysteresis": {
+          "indicators": ["HO triggered on small signal variations"],
+          "actions": ["Increase hysteresis value", "Increase timeToTrigger"]
+        }
+      }
+    },
+    "too_early_handover": {
+      "symptoms": ["HO failure after short time on target", "Quick return to source", "Low RSRP on target at HO trigger"],
+      "diagnostic_steps": [
+        "1. Check VarRLF-Report for failedPCellId = target, previousPCellId = source",
+        "2. Analyze timeConnFailure (very short = too early HO)",
+        "3. Compare source vs target RSRP at HO decision"
+      ],
+      "recommended_actions": ["Increase a3-Offset", "Increase timeToTrigger", "Review CIO settings"]
+    },
+    "too_late_handover": {
+      "symptoms": ["RLF before HO initiated", "Long T310 running before HO trigger", "Very low RSRP at HO trigger"],
+      "diagnostic_steps": [
+        "1. Check VarRLF-Report for RLF without HO attempt",
+        "2. Analyze T310 vs HO trigger timing",
+        "3. Check measResultLastServCell for RSRP trend"
+      ],
+      "recommended_actions": ["Decrease a3-Offset", "Decrease timeToTrigger", "Lower A5-Threshold1", "Improve coverage"]
+    }
+  },
+  "best_practices": {
+    "handover_parameter_optimization": {
+      "a3_offset": {
+        "typical_range": "1-6 dB",
+        "recommendation": "Start with 3dB, adjust based on ping-pong vs late-HO balance"
+      },
+      "hysteresis": {
+        "typical_range": "0.5-3 dB",
+        "recommendation": "Use 1-2dB for stable environments, lower for high mobility"
+      },
+      "time_to_trigger": {
+        "typical_values": ["ms40", "ms64", "ms80", "ms100", "ms128", "ms160", "ms256", "ms320", "ms480", "ms512", "ms640", "ms1024", "ms1280", "ms2560", "ms5120"],
+        "recommendation": "ms160-ms320 for macro, ms40-ms80 for small cells"
+      },
+      "t304": {
+        "recommendation": "ms100-ms200 for normal conditions, ms500+ for challenging RF"
+      }
+    },
+    "measurement_configuration": {
+      "filter_coefficient": {
+        "description": "Layer 3 filtering coefficient (fc)",
+        "typical_range": "fc4 to fc8",
+        "higher_value": "More smoothing, slower response",
+        "lower_value": "Less smoothing, faster response to changes"
+      },
+      "report_interval": {
+        "typical_values": ["ms120", "ms240", "ms480", "ms640", "ms1024"],
+        "recommendation": "ms480-ms1024 for macro mobility"
+      }
+    }
+  }
+}

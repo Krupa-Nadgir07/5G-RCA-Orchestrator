@@ -81,6 +81,28 @@ class ValidationAgent(BaseAgent):
             "contradicting_kpis": {},
             "required_evidence": 1,
         },
+        RootCauseCategory.SOFTWARE_FAULT: {
+            "supporting_kpis": {
+                "latency_ms": lambda v: v > 100,
+                "throughput_dl_mbps": lambda v: v < 10,
+                "prb_utilization_pct": lambda v: v < 70,
+            },
+            "contradicting_kpis": {
+                "prb_utilization_pct": lambda v: v > 90,
+            },
+            "required_evidence": 1,
+        },
+        RootCauseCategory.CONFIGURATION_ERROR: {
+            "supporting_kpis": {
+                "rsrp_dbm": lambda v: v < -110,
+                "handover_success_rate": lambda v: v < 0.85,
+                "sinr_db": lambda v: v < 0,
+            },
+            "contradicting_kpis": {
+                "handover_success_rate": lambda v: v > 0.95,
+            },
+            "required_evidence": 1,
+        },
     }
 
     async def execute(self, event: ProcessedEvent, memory: WorkingMemory, **kwargs) -> AgentMessage:
@@ -154,11 +176,13 @@ class ValidationAgent(BaseAgent):
         # Counterfactual test
         counterfactual_score = self._counterfactual_test(hypothesis, kpi_dict, rules)
         
-        # Compute weighted validation score
+        # Compute weighted validation score, blending LLM hypothesis confidence
+        # and shifting weight to emphasize support score.
         validation_score = (
-            support_score * 0.4 +
-            (1.0 - contradiction_score) * 0.3 +
-            counterfactual_score * 0.3
+            hypothesis.confidence * 0.2 +
+            support_score * 0.5 +
+            (1.0 - contradiction_score) * 0.15 +
+            counterfactual_score * 0.15
         )
 
         return {

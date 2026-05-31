@@ -98,7 +98,7 @@ class OrchestratorGraph:
                         anomalies=len(signal_result.content.get("anomalies", [])))
 
             # Early exit if no anomalies detected
-            if not signal_result.content.get("anomalies") and signal_result.confidence < 0.3:
+            if not signal_result.content.get("anomalies"):
                 logger.info("No anomalies detected, returning clean result")
                 return self._create_clean_result(event, start_time)
 
@@ -192,6 +192,7 @@ class OrchestratorGraph:
         return {
             "total_executions": self._execution_count,
             "avg_latency_ms": round(avg_latency, 2),
+            "inference": self.inference_service.get_metrics(),
             "agents": {
                 "signal": self.signal_agent.get_metrics(),
                 "knowledge": self.knowledge_agent.get_metrics(),

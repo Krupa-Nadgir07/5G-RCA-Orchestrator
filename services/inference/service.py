@@ -18,6 +18,7 @@ class InferenceService:
     def __init__(self):
         self.router = InferenceRouter()
         self.calibrator = ConfidenceCalibrator()
+        self._recent_predictions: dict[str, float] = {}
 
     async def generate(
         self, 
@@ -52,7 +53,17 @@ class InferenceService:
 
     def get_metrics(self) -> dict:
         """Return inference service metrics."""
-        return self.router.get_metrics()
+        router_metrics = self.router.get_metrics()
+        calibrator_data = {
+            "is_fitted": self.calibrator._is_fitted,
+            "scale_a": self.calibrator._scale_a,
+            "scale_b": self.calibrator._scale_b,
+            "num_observations": len(self.calibrator._calibration_data),
+        }
+        return {
+            **router_metrics,
+            "calibrator": calibrator_data
+        }
 
     async def close(self):
         """Cleanup resources."""

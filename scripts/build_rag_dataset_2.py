@@ -30,8 +30,8 @@ import sys
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-INPUT_CSV = PROJECT_ROOT / "test_2.csv"
-OUTPUT_JSONL = PROJECT_ROOT / "data" / "rag_dataset_2.jsonl"
+DEFAULT_INPUT_CSV = PROJECT_ROOT / "test_2.csv"
+DEFAULT_OUTPUT_JSONL = PROJECT_ROOT / "data" / "rag_dataset_2.jsonl"
 
 ROOT_CAUSE_LABELS = {
     "C1": "The serving cell's downtilt angle is too large, causing weak coverage at the far end.",
@@ -551,9 +551,18 @@ def build_deduped_cell_config(key: str, row: dict, scenario_ids: list[str]) -> d
 # ---------------------------------------------------------------------------
 
 def main():
-    print(f"Reading {INPUT_CSV} ...")
+    import argparse
+    parser = argparse.ArgumentParser(description="Build a RAG retrieval dataset from CSV.")
+    parser.add_argument("--input", type=str, default=str(DEFAULT_INPUT_CSV), help="Input CSV file path")
+    parser.add_argument("--output", type=str, default=str(DEFAULT_OUTPUT_JSONL), help="Output JSONL file path")
+    args = parser.parse_args()
 
-    OUTPUT_JSONL.parent.mkdir(parents=True, exist_ok=True)
+    input_path = Path(args.input)
+    output_path = Path(args.output)
+
+    print(f"Reading {input_path} ...")
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
 
     # --- First pass: collect cell configs for deduplication ---
     cell_registry: dict[str, dict] = {}  # key -> first row dict
@@ -564,7 +573,7 @@ def main():
     total_rows = 0
     answer_counts: dict[str, int] = {}
 
-    with open(INPUT_CSV, "r", encoding="utf-8") as fin:
+    with open(input_path, "r", encoding="utf-8") as fin:
         reader = csv.DictReader(fin)
         for idx, row in enumerate(reader):
             question = row.get("question", "")
@@ -607,7 +616,7 @@ def main():
     chunk_type_counts: dict[str, int] = {}
     total_chunks = 0
 
-    with open(OUTPUT_JSONL, "w", encoding="utf-8") as fout:
+    with open(output_path, "w", encoding="utf-8") as fout:
 
         def write_chunk(chunk: dict):
             nonlocal total_chunks
@@ -631,9 +640,9 @@ def main():
         for chunk in all_scenario_chunks:
             write_chunk(chunk)
 
-    file_mb = OUTPUT_JSONL.stat().st_size / (1024 * 1024)
+    file_mb = output_path.stat().st_size / (1024 * 1024)
     print(f"\nDone! {total_rows} scenarios -> {total_chunks} chunks")
-    print(f"Output: {OUTPUT_JSONL} ({file_mb:.1f} MB)")
+    print(f"Output: {output_path} ({file_mb:.1f} MB)")
     print("\nChunk type distribution:")
     for ctype, count in sorted(chunk_type_counts.items()):
         print(f"  {ctype}: {count}")

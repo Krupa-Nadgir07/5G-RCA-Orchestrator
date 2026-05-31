@@ -41,6 +41,7 @@ class Settings(BaseSettings):
     qdrant_host: str = "localhost"
     qdrant_port: int = 6333
     qdrant_collection: str = "3gpp_knowledge"
+    qdrant_rag_collection: str = "5g_rag_dataset"
     qdrant_api_key: Optional[str] = None
 
     # Ollama Inference

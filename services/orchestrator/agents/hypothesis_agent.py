@@ -131,6 +131,7 @@ Generate your hypotheses now:"""
             "hypotheses": [h.model_dump() for h in hypotheses],
             "model_used": response.model,
             "model_confidence": response.confidence,
+            "tokens_used": response.tokens_used,
         }
         await memory.store("hypotheses", hypothesis_result)
 
@@ -157,6 +158,11 @@ Generate your hypotheses now:"""
         # Format observations
         kpi_dict = event.kpis.model_dump(exclude_none=True)
         observations = "\n".join(f"- {k}: {v}" for k, v in kpi_dict.items()) or "No KPIs available"
+
+        # Append rich scenario flags from parsed_template if present
+        # (injected by the benchmark's scenario_to_event for structured evaluation)
+        if event.parsed_template:
+            observations += "\n\n## Scenario-Specific Degradation Flags\n" + event.parsed_template
 
         # Format anomalies
         anomalies_list = signal_analysis.get("anomalies", [])

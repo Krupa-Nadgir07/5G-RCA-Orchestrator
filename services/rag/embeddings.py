@@ -25,6 +25,10 @@ class EmbeddingService:
         self._cache: dict[str, np.ndarray] = {}
         self._cache_max_size = 10000
 
+    def initialize(self):
+        """Pre-load the embedding model into memory at startup."""
+        self._load_model()
+
     def _load_model(self):
         """Lazy-load the embedding model."""
         if self._model is None:

@@ -1,0 +1,1658 @@
+[
+  {
+    "concept": "A1 Event - Serving becomes better than threshold",
+    "domain": "mobility",
+    "spec_reference": "3GPP TS 38.331 Section 5.5.4.2",
+    "purpose": "Triggers when serving cell quality exceeds threshold, used to stop inter-frequency measurements or deactivate secondary carriers to save UE power",
+    "trigger_conditions": [
+      "Ms - Hys > Thresh (entering condition)",
+      "Ms + Hys < Thresh (leaving condition)",
+      "Where Ms = serving cell measurement, Hys = hysteresis, Thresh = a1-Threshold"
+    ],
+    "related_kpis": [
+      "rsrp_dbm",
+      "rsrq_db",
+      "sinr_db"
+    ],
+    "kpi_patterns": [
+      "Strong RSRP > threshold indicates good serving cell coverage",
+      "Stable RSRP above threshold reduces unnecessary measurements"
+    ],
+    "failure_symptoms": [
+      "Unnecessary inter-frequency measurements consuming UE battery",
+      "Delayed measurement gap configuration",
+      "Failure to stop measurements when serving is strong"
+    ],
+    "possible_root_causes": [
+      "a1-Threshold set too high",
+      "Hysteresis too large causing delayed entry",
+      "Measurement object misconfiguration"
+    ],
+    "operational_impact": [
+      "Increased UE power consumption",
+      "Unnecessary measurement gaps impacting throughput",
+      "Suboptimal carrier utilization"
+    ],
+    "recommended_actions": [
+      "Set a1-Threshold to -100 to -90 dBm RSRP for typical macro",
+      "Use hysteresis 1-3 dB for stability",
+      "Verify measurement object linked to correct carriers"
+    ],
+    "related_events": [
+      "A1",
+      "A2"
+    ],
+    "related_timers": [
+      "timeToTrigger"
+    ],
+    "confidence": 0.92
+  },
+  {
+    "concept": "A2 Event - Serving becomes worse than threshold",
+    "domain": "mobility",
+    "spec_reference": "3GPP TS 38.331 Section 5.5.4.3",
+    "purpose": "Triggers when serving cell quality degrades below threshold, used to start inter-frequency measurements or activate CA/DC",
+    "trigger_conditions": [
+      "Ms + Hys < Thresh (entering condition)",
+      "Ms - Hys > Thresh (leaving condition)",
+      "Where Ms = serving cell measurement, Thresh = a2-Threshold"
+    ],
+    "related_kpis": [
+      "rsrp_dbm",
+      "rsrq_db",
+      "sinr_db",
+      "throughput_dl_mbps"
+    ],
+    "kpi_patterns": [
+      "RSRP dropping below -110 dBm indicates coverage degradation",
+      "RSRQ below -12 dB with weak RSRP suggests cell edge",
+      "Throughput degradation correlating with A2 triggers"
+    ],
+    "failure_symptoms": [
+      "Late activation of inter-frequency measurements",
+      "Missed handover opportunities to better carriers",
+      "Coverage holes not detected in time"
+    ],
+    "possible_root_causes": [
+      "a2-Threshold set too low",
+      "Hysteresis too large delaying trigger",
+      "No inter-frequency neighbors configured"
+    ],
+    "operational_impact": [
+      "Call drops at cell edge",
+      "Throughput degradation before HO trigger",
+      "Poor inter-frequency mobility"
+    ],
+    "recommended_actions": [
+      "Set a2-Threshold to -110 to -105 dBm RSRP",
+      "Reduce hysteresis if late triggering observed",
+      "Ensure inter-frequency measurement objects configured"
+    ],
+    "related_events": [
+      "A1",
+      "A2",
+      "A5"
+    ],
+    "related_timers": [
+      "timeToTrigger"
+    ],
+    "confidence": 0.94
+  },
+  {
+    "concept": "A3 Event - Neighbor becomes offset better than SpCell",
+    "domain": "mobility",
+    "spec_reference": "3GPP TS 38.331 Section 5.5.4.4",
+    "purpose": "Primary intra-frequency handover trigger when neighboring cell becomes stronger than serving cell by configured offset",
+    "trigger_conditions": [
+      "Mn + Ofn + Ocn - Hys > Mp + Ofp + Ocp + Off (entering)",
+      "Mn + Ofn + Ocn + Hys < Mp + Ofp + Ocp + Off (leaving)",
+      "Where Mn = neighbor measurement, Mp = SpCell measurement, Off = a3-Offset"
+    ],
+    "related_kpis": [
+      "handover_success_rate",
+      "rsrp_dbm",
+      "rsrq_db",
+      "latency_ms"
+    ],
+    "kpi_patterns": [
+      "Low handover success rate with weak serving RSRP indicates late HO",
+      "Ping-pong handovers with fluctuating RSRP between cells",
+      "High HO success but frequent HOs indicates low offset/hysteresis"
+    ],
+    "failure_symptoms": [
+      "Handover failure",
+      "Ping-pong mobility between cells",
+      "Late handover causing RLF",
+      "Early handover to weak target"
+    ],
+    "possible_root_causes": [
+      "a3-Offset misconfigured (too high causes late HO, too low causes ping-pong)",
+      "Hysteresis value inappropriate for environment",
+      "timeToTrigger too long or too short",
+      "Cell individual offset (CIO) not optimized",
+      "Coverage overlap imbalance between cells"
+    ],
+    "operational_impact": [
+      "Call drops during mobility",
+      "Throughput degradation at cell edge",
+      "Increased signaling load from ping-pong",
+      "Poor user experience during handover"
+    ],
+    "recommended_actions": [
+      "Set a3-Offset to 2-6 dB (start with 3 dB)",
+      "Configure hysteresis 1-2 dB for macro cells",
+      "Set timeToTrigger 100-320 ms for macro, 40-80 ms for small cells",
+      "Enable cell individual offset for problematic cell pairs",
+      "Review antenna tilt/azimuth for coverage overlap issues"
+    ],
+    "related_events": [
+      "A3",
+      "A5"
+    ],
+    "related_timers": [
+      "timeToTrigger",
+      "T304",
+      "T310"
+    ],
+    "confidence": 0.96
+  },
+  {
+    "concept": "A4 Event - Neighbor becomes better than threshold",
+    "domain": "mobility",
+    "spec_reference": "3GPP TS 38.331 Section 5.5.4.5",
+    "purpose": "Triggers when neighbor cell exceeds absolute threshold, used for inter-frequency handover preparation or CA activation",
+    "trigger_conditions": [
+      "Mn + Ofn + Ocn - Hys > Thresh (entering)",
+      "Mn + Ofn + Ocn + Hys < Thresh (leaving)",
+      "Where Mn = neighbor measurement, Thresh = a4-Threshold"
+    ],
+    "related_kpis": [
+      "rsrp_dbm",
+      "handover_success_rate",
+      "throughput_dl_mbps"
+    ],
+    "kpi_patterns": [
+      "Strong neighbor RSRP above threshold indicates HO candidate available",
+      "Multiple neighbors above threshold may indicate coverage overlap"
+    ],
+    "failure_symptoms": [
+      "Inter-frequency HO not triggered despite strong neighbor",
+      "CA SCell not activated when neighbor is strong",
+      "Missed offload opportunities"
+    ],
+    "possible_root_causes": [
+      "a4-Threshold set too high",
+      "Neighbor not in measurement configuration",
+      "Missing neighbor relations"
+    ],
+    "operational_impact": [
+      "Suboptimal frequency utilization",
+      "Users stuck on congested carrier",
+      "Missed CA/DC opportunities"
+    ],
+    "recommended_actions": [
+      "Set a4-Threshold based on inter-frequency HO policy",
+      "Verify neighbor cells in measurement object",
+      "Review ANR configuration for automatic neighbor detection"
+    ],
+    "related_events": [
+      "A4",
+      "A5"
+    ],
+    "related_timers": [
+      "timeToTrigger"
+    ],
+    "confidence": 0.88
+  },
+  {
+    "concept": "A5 Event - SpCell worse than threshold1 AND neighbor better than threshold2",
+    "domain": "mobility",
+    "spec_reference": "3GPP TS 38.331 Section 5.5.4.6",
+    "purpose": "Coverage-based inter-frequency handover trigger requiring both serving degradation and target availability",
+    "trigger_conditions": [
+      "Mp + Hys < Thresh1 AND Mn + Ofn + Ocn - Hys > Thresh2 (entering)",
+      "Mp - Hys > Thresh1 OR Mn + Ofn + Ocn + Hys < Thresh2 (leaving)",
+      "Where Mp = SpCell, Mn = neighbor, Thresh1 = a5-Threshold1, Thresh2 = a5-Threshold2"
+    ],
+    "related_kpis": [
+      "rsrp_dbm",
+      "rsrq_db",
+      "handover_success_rate",
+      "throughput_dl_mbps"
+    ],
+    "kpi_patterns": [
+      "Low serving RSRP below Thresh1 combined with strong neighbor above Thresh2",
+      "Inter-frequency HO success correlating with A5 threshold settings",
+      "Coverage-triggered HO patterns at cell boundaries"
+    ],
+    "failure_symptoms": [
+      "Inter-frequency handover not triggered at cell edge",
+      "Late inter-frequency HO causing RLF",
+      "Unnecessary inter-frequency HO when serving is adequate"
+    ],
+    "possible_root_causes": [
+      "a5-Threshold1 set too low (late trigger)",
+      "a5-Threshold2 set too high (no suitable target found)",
+      "Inter-frequency neighbors not configured",
+      "Measurement gaps not properly scheduled"
+    ],
+    "operational_impact": [
+      "Call drops at inter-frequency boundaries",
+      "Poor coverage continuity between carriers",
+      "Throughput cliff at frequency boundaries"
+    ],
+    "recommended_actions": [
+      "Set a5-Threshold1 to -110 to -115 dBm (serving degradation trigger)",
+      "Set a5-Threshold2 to -110 to -100 dBm (target quality requirement)",
+      "Ensure measurement gaps configured for inter-frequency measurements",
+      "Verify inter-frequency neighbor relations complete"
+    ],
+    "related_events": [
+      "A2",
+      "A5"
+    ],
+    "related_timers": [
+      "timeToTrigger",
+      "T304"
+    ],
+    "confidence": 0.94
+  },
+  {
+    "concept": "A6 Event - Neighbor becomes offset better than SCell",
+    "domain": "mobility",
+    "spec_reference": "3GPP TS 38.331 Section 5.5.4.7",
+    "purpose": "Secondary Cell change trigger in Carrier Aggregation when neighbor SCell becomes better than current SCell",
+    "trigger_conditions": [
+      "Mn + Ocn - Hys > Ms + Ocs + Off (entering)",
+      "Mn + Ocn + Hys < Ms + Ocs + Off (leaving)",
+      "Where Mn = neighbor SCell, Ms = current SCell, Off = a6-Offset"
+    ],
+    "related_kpis": [
+      "rsrp_dbm",
+      "throughput_dl_mbps",
+      "prb_utilization_pct"
+    ],
+    "kpi_patterns": [
+      "SCell RSRP variation indicating mobility through CA coverage",
+      "Throughput improvement after SCell change"
+    ],
+    "failure_symptoms": [
+      "Suboptimal SCell selection",
+      "SCell not changed despite better neighbor available",
+      "Frequent SCell changes (ping-pong)"
+    ],
+    "possible_root_causes": [
+      "a6-Offset misconfigured",
+      "SCell measurement not enabled",
+      "Missing SCell neighbor relations"
+    ],
+    "operational_impact": [
+      "Reduced CA throughput",
+      "Poor SCell utilization",
+      "Suboptimal spectrum efficiency"
+    ],
+    "recommended_actions": [
+      "Configure a6-Offset 2-4 dB for SCell stability",
+      "Enable SCell measurements",
+      "Verify SCell neighbor list completeness"
+    ],
+    "related_events": [
+      "A6"
+    ],
+    "related_timers": [
+      "timeToTrigger"
+    ],
+    "confidence": 0.85
+  },
+  {
+    "concept": "T310 Timer - Radio Link Problem Detection",
+    "domain": "radio_quality",
+    "spec_reference": "3GPP TS 38.331 Section 5.3.10.3",
+    "purpose": "Timer started upon receiving N310 consecutive out-of-sync indications from physical layer, leading to RLF declaration upon expiry",
+    "trigger_conditions": [
+      "N310 consecutive out-of-sync indications received from L1",
+      "Out-of-sync based on BLER threshold (Qout) exceeded",
+      "Physical layer indicates radio link quality below threshold"
+    ],
+    "related_kpis": [
+      "bler_pct",
+      "sinr_db",
+      "rsrp_dbm",
+      "rsrq_db"
+    ],
+    "kpi_patterns": [
+      "High BLER (>10%) preceding T310 start",
+      "Low SINR (<0 dB) correlating with out-of-sync indications",
+      "RSRP degradation trend before T310 expiry",
+      "Consecutive poor radio conditions triggering N310"
+    ],
+    "failure_symptoms": [
+      "Radio Link Failure declaration",
+      "RRC re-establishment attempts",
+      "Call drops",
+      "Service interruption"
+    ],
+    "possible_root_causes": [
+      "Coverage gap",
+      "Strong interference (low SINR despite adequate RSRP)",
+      "Physical layer blockage",
+      "Antenna/hardware issues",
+      "T310 value too short for transient conditions",
+      "N310 value too low (too sensitive)"
+    ],
+    "operational_impact": [
+      "Increased RLF rate",
+      "Higher re-establishment attempts",
+      "Degraded user experience",
+      "Potential call drops"
+    ],
+    "recommended_actions": [
+      "Analyze RLF reports for T310 expiry patterns",
+      "Increase T310 (50-2000ms) if transient conditions cause false RLF",
+      "Increase N310 (1-20) to reduce sensitivity to brief outages",
+      "Address coverage or interference root cause",
+      "Optimize handover parameters to trigger HO before T310 expiry"
+    ],
+    "related_events": [
+      "RLF",
+      "Re-establishment"
+    ],
+    "related_timers": [
+      "T310",
+      "T311",
+      "N310",
+      "N311"
+    ],
+    "confidence": 0.95
+  },
+  {
+    "concept": "N310 Counter - Out-of-Sync Indication Counter",
+    "domain": "radio_quality",
+    "spec_reference": "3GPP TS 38.331 Section 5.3.10.3",
+    "purpose": "Counts consecutive out-of-sync indications from physical layer before starting T310 timer",
+    "trigger_conditions": [
+      "Physical layer indicates out-of-sync (BLER > Qout threshold)",
+      "Counter increments on each consecutive out-of-sync",
+      "T310 starts when counter reaches N310 value"
+    ],
+    "related_kpis": [
+      "bler_pct",
+      "sinr_db"
+    ],
+    "kpi_patterns": [
+      "Sustained high BLER leading to N310 threshold reached",
+      "Intermittent poor quality not reaching N310 (filtering effect)"
+    ],
+    "failure_symptoms": [
+      "Premature T310 start (N310 too low)",
+      "Delayed RLF detection (N310 too high)"
+    ],
+    "possible_root_causes": [
+      "N310 misconfigured for RF environment",
+      "Interference causing intermittent out-of-sync"
+    ],
+    "operational_impact": [
+      "RLF sensitivity tuning",
+      "Balance between false RLF and detection delay"
+    ],
+    "recommended_actions": [
+      "Set N310 1-5 for quick detection in stable environments",
+      "Set N310 5-10 for environments with transient interference",
+      "Analyze correlation between N310 settings and RLF rates"
+    ],
+    "related_events": [
+      "RLF"
+    ],
+    "related_timers": [
+      "T310",
+      "N310"
+    ],
+    "confidence": 0.90
+  },
+  {
+    "concept": "N311 Counter - In-Sync Indication Counter",
+    "domain": "radio_quality",
+    "spec_reference": "3GPP TS 38.331 Section 5.3.10.3",
+    "purpose": "Counts consecutive in-sync indications to stop T310 timer and recover from radio link problem",
+    "trigger_conditions": [
+      "Physical layer indicates in-sync (BLER < Qin threshold)",
+      "Counter increments on each consecutive in-sync",
+      "T310 stopped when counter reaches N311 value"
+    ],
+    "related_kpis": [
+      "bler_pct",
+      "sinr_db"
+    ],
+    "kpi_patterns": [
+      "BLER recovery below Qin threshold",
+      "SINR improvement leading to in-sync indications"
+    ],
+    "failure_symptoms": [
+      "T310 not stopped despite improved conditions (N311 too high)",
+      "Premature recovery leading to subsequent RLF (N311 too low)"
+    ],
+    "possible_root_causes": [
+      "N311 misconfigured",
+      "Unstable RF conditions preventing sustained in-sync"
+    ],
+    "operational_impact": [
+      "RLF recovery tuning",
+      "Ability to recover from transient degradation"
+    ],
+    "recommended_actions": [
+      "Set N311 1-3 for quick recovery",
+      "Ensure N311 provides stability before stopping T310",
+      "Coordinate N310/N311 values for balanced RLF behavior"
+    ],
+    "related_events": [
+      "RLF recovery"
+    ],
+    "related_timers": [
+      "T310",
+      "N311"
+    ],
+    "confidence": 0.90
+  },
+  {
+    "concept": "T311 Timer - RRC Re-establishment Timer",
+    "domain": "fault_management",
+    "spec_reference": "3GPP TS 38.331 Section 5.3.7",
+    "purpose": "Timer for RRC connection re-establishment procedure after RLF, handover failure, or other failures",
+    "trigger_conditions": [
+      "RLF declared (T310 expiry, RLC max retransmissions, etc.)",
+      "Handover failure (T304 expiry)",
+      "Reconfiguration failure",
+      "Integrity check failure"
+    ],
+    "related_kpis": [
+      "rsrp_dbm",
+      "handover_success_rate"
+    ],
+    "kpi_patterns": [
+      "Re-establishment success correlating with T311 duration",
+      "Coverage availability during T311 period"
+    ],
+    "failure_symptoms": [
+      "T311 expiry leading to RRC_IDLE",
+      "Failed re-establishment attempts",
+      "Prolonged service outage"
+    ],
+    "possible_root_causes": [
+      "No suitable cell found within T311 duration",
+      "T311 too short for cell selection",
+      "Coverage gap preventing re-establishment",
+      "Target cell rejecting re-establishment"
+    ],
+    "operational_impact": [
+      "Call drops if T311 expires",
+      "Service continuity depends on successful re-establishment",
+      "User returns to IDLE if re-establishment fails"
+    ],
+    "recommended_actions": [
+      "Set T311 1000-3000 ms for typical macro deployments",
+      "Increase T311 if frequent expirations observed",
+      "Ensure adequate coverage for re-establishment",
+      "Verify UE context stored at potential re-establishment cells"
+    ],
+    "related_events": [
+      "RLF",
+      "Re-establishment",
+      "Handover failure"
+    ],
+    "related_timers": [
+      "T311",
+      "T310",
+      "T304"
+    ],
+    "confidence": 0.93
+  },
+  {
+    "concept": "T304 Timer - Handover Execution Timer",
+    "domain": "mobility",
+    "spec_reference": "3GPP TS 38.331 Section 5.3.5.5.2",
+    "purpose": "Timer for handover execution from reconfigurationWithSync application to successful random access completion on target cell",
+    "trigger_conditions": [
+      "UE applies reconfigurationWithSync in RRCReconfiguration",
+      "Timer starts when UE begins synchronization to target cell"
+    ],
+    "related_kpis": [
+      "handover_success_rate",
+      "latency_ms",
+      "rsrp_dbm"
+    ],
+    "kpi_patterns": [
+      "T304 expiry rate correlating with HO failure rate",
+      "HO interruption time relative to T304 consumption",
+      "Target cell RSRP at HO execution"
+    ],
+    "failure_symptoms": [
+      "Handover failure (T304 expiry)",
+      "Extended HO interruption time",
+      "RRC re-establishment after HO attempt"
+    ],
+    "possible_root_causes": [
+      "Target cell coverage gap",
+      "RACH failure on target cell",
+      "Target cell congestion (preamble collision)",
+      "T304 value too short for RACH procedure",
+      "Dedicated preamble not configured"
+    ],
+    "operational_impact": [
+      "Call drops during handover",
+      "Service interruption",
+      "Triggering of re-establishment procedure"
+    ],
+    "recommended_actions": [
+      "Set T304 100-200 ms for normal conditions",
+      "Increase T304 to 500+ ms for challenging RF or loaded cells",
+      "Configure dedicated preambles for handover",
+      "Optimize RACH parameters on target cells",
+      "Ensure adequate target cell coverage at HO execution point"
+    ],
+    "related_events": [
+      "Handover",
+      "Handover failure"
+    ],
+    "related_timers": [
+      "T304",
+      "T310",
+      "T311"
+    ],
+    "confidence": 0.95
+  },
+  {
+    "concept": "Radio Link Failure (RLF)",
+    "domain": "fault_management",
+    "spec_reference": "3GPP TS 38.331 Section 5.3.10",
+    "purpose": "Declaration of radio link failure when UE loses reliable communication with serving cell, triggering re-establishment",
+    "trigger_conditions": [
+      "T310 expiry (radio link monitoring failure)",
+      "Random access problem (MAC indication)",
+      "RLC max retransmissions reached (rlc-MaxNumRetx)",
+      "Beam failure recovery failure",
+      "Consistent LBT failure (unlicensed spectrum)",
+      "T312 expiry (new serving cell quality)",
+      "BH RLF indication from IAB"
+    ],
+    "related_kpis": [
+      "bler_pct",
+      "sinr_db",
+      "rsrp_dbm",
+      "rsrq_db",
+      "handover_success_rate"
+    ],
+    "kpi_patterns": [
+      "High BLER (>10-20%) sustained before RLF",
+      "Low SINR (<0 dB) correlating with RLF events",
+      "Weak RSRP (<-120 dBm) at RLF occurrence",
+      "RLF cluster patterns indicating coverage issues"
+    ],
+    "failure_symptoms": [
+      "Call drops",
+      "Data session interruption",
+      "RRC re-establishment attempts",
+      "UE transitioning to IDLE if re-establishment fails"
+    ],
+    "possible_root_causes": [
+      "Coverage gap",
+      "Strong interference",
+      "Physical blockage (buildings, terrain)",
+      "Antenna/hardware malfunction",
+      "Late handover (HO not triggered before RLF)",
+      "Beam failure in mmWave without successful recovery"
+    ],
+    "operational_impact": [
+      "Service interruption",
+      "Degraded user experience",
+      "Increased signaling from re-establishment",
+      "Potential call/session termination"
+    ],
+    "recommended_actions": [
+      "Analyze RLF reports (VarRLF-Report) for patterns",
+      "Identify failedPCellId clusters for coverage issues",
+      "Review rlf-Cause distribution (T310, RACH, RLC, beam failure)",
+      "Optimize handover parameters to trigger HO before RLF",
+      "Address coverage gaps with site optimization or new deployment",
+      "Tune T310/N310/N311 for appropriate RLF sensitivity"
+    ],
+    "related_events": [
+      "RLF",
+      "Re-establishment",
+      "Beam Failure"
+    ],
+    "related_timers": [
+      "T310",
+      "T311",
+      "N310",
+      "N311"
+    ],
+    "confidence": 0.97
+  },
+  {
+    "concept": "RRC Connection Re-establishment",
+    "domain": "fault_management",
+    "spec_reference": "3GPP TS 38.331 Section 5.3.7",
+    "purpose": "Procedure to recover RRC connection after RLF, handover failure, reconfiguration failure, or integrity failure",
+    "trigger_conditions": [
+      "Radio link failure declared",
+      "Handover failure (T304 expiry)",
+      "Reconfiguration failure (inability to comply)",
+      "Integrity check failure",
+      "RRC connection release with suspend indication failure"
+    ],
+    "related_kpis": [
+      "rsrp_dbm",
+      "handover_success_rate",
+      "latency_ms"
+    ],
+    "kpi_patterns": [
+      "Re-establishment success rate by cell",
+      "Time from failure to re-establishment completion",
+      "Re-establishment attempt distribution by cause"
+    ],
+    "failure_symptoms": [
+      "Re-establishment rejection",
+      "T311 expiry before suitable cell found",
+      "Transition to RRC_IDLE",
+      "Session/call termination"
+    ],
+    "possible_root_causes": [
+      "UE context not available at re-establishment cell",
+      "No suitable cell within T311 duration",
+      "Re-establishment cell at capacity",
+      "Security verification failure"
+    ],
+    "operational_impact": [
+      "Service recovery time",
+      "Call continuity",
+      "User experience during failure recovery"
+    ],
+    "recommended_actions": [
+      "Ensure UE context available at neighbor cells",
+      "Configure adequate T311 value",
+      "Analyze re-establishment patterns by cell",
+      "Address root cause of initial failure (RLF, HO failure)"
+    ],
+    "related_events": [
+      "RLF",
+      "Handover failure",
+      "Re-establishment"
+    ],
+    "related_timers": [
+      "T311",
+      "T301"
+    ],
+    "confidence": 0.92
+  },
+  {
+    "concept": "Beam Failure Detection",
+    "domain": "beam_management",
+    "spec_reference": "3GPP TS 38.331 Section 5.3.10.1, RadioLinkMonitoringConfig",
+    "purpose": "Detection of beam failure when beam quality falls below threshold, triggering beam failure recovery procedure",
+    "trigger_conditions": [
+      "beamFailureInstanceMaxCount consecutive beam failure instances detected",
+      "Physical layer indicates beam failure based on RSRP/BLER thresholds",
+      "beamFailureDetectionTimer running during failure detection"
+    ],
+    "related_kpis": [
+      "rsrp_dbm",
+      "sinr_db",
+      "bler_pct"
+    ],
+    "kpi_patterns": [
+      "Sudden RSRP drop on serving beam",
+      "High BLER on beam-specific reference signals",
+      "SINR degradation on active beam"
+    ],
+    "failure_symptoms": [
+      "Beam failure declared",
+      "Beam failure recovery initiated",
+      "Throughput degradation before recovery",
+      "Potential RLF if recovery fails"
+    ],
+    "possible_root_causes": [
+      "Physical blockage (hand, body, object)",
+      "UE rotation changing antenna orientation",
+      "Interference on serving beam",
+      "Beam tracking failure during mobility"
+    ],
+    "operational_impact": [
+      "Service interruption during beam failure",
+      "Recovery latency impacts real-time services",
+      "RLF if beam recovery fails"
+    ],
+    "recommended_actions": [
+      "Configure beamFailureInstanceMaxCount (n1-n10) based on environment",
+      "Set beamFailureDetectionTimer (pbfd1-pbfd10) appropriately",
+      "Ensure adequate candidate beams configured",
+      "Analyze beam failure patterns for coverage optimization"
+    ],
+    "related_events": [
+      "Beam Failure",
+      "Beam Failure Recovery"
+    ],
+    "related_timers": [
+      "beamFailureDetectionTimer",
+      "beamFailureRecoveryTimer"
+    ],
+    "confidence": 0.91
+  },
+  {
+    "concept": "Beam Failure Recovery (BFR)",
+    "domain": "beam_management",
+    "spec_reference": "3GPP TS 38.331 Section 5.3.10.1, BeamFailureRecoveryConfig",
+    "purpose": "Procedure to recover from beam failure by identifying candidate beam and requesting beam switch via BFRQ",
+    "trigger_conditions": [
+      "Beam failure detected",
+      "Candidate beam identified above rsrp-ThresholdSSB threshold",
+      "BFRQ (Beam Failure Recovery Request) transmitted"
+    ],
+    "related_kpis": [
+      "rsrp_dbm",
+      "sinr_db",
+      "latency_ms"
+    ],
+    "kpi_patterns": [
+      "Candidate beam RSRP above recovery threshold",
+      "BFR success rate by cell/beam configuration",
+      "Recovery latency impact on throughput"
+    ],
+    "failure_symptoms": [
+      "Beam failure recovery failure (beamFailureRecoveryFailure)",
+      "RLF declared after failed BFR",
+      "Extended service interruption"
+    ],
+    "possible_root_causes": [
+      "No candidate beam above threshold (rsrp-ThresholdSSB too high)",
+      "BFRQ RACH failure (contention, coverage)",
+      "beamFailureRecoveryTimer expires before response",
+      "Insufficient candidate beam list configuration"
+    ],
+    "operational_impact": [
+      "Service continuity in mmWave/FR2 deployments",
+      "Latency during beam recovery",
+      "RLF rate in beam-based deployments"
+    ],
+    "recommended_actions": [
+      "Configure candidateBeamRSList with multiple options",
+      "Set rsrp-ThresholdSSB appropriately (-100 to -90 dBm typical)",
+      "Configure beamFailureRecoveryTimer (ms10-ms200) based on RACH timing",
+      "Enable spCell-BFR-CBRA for contention-based recovery",
+      "Analyze BFR failure patterns for beam planning optimization"
+    ],
+    "related_events": [
+      "Beam Failure",
+      "Beam Failure Recovery",
+      "RLF"
+    ],
+    "related_timers": [
+      "beamFailureRecoveryTimer",
+      "T310"
+    ],
+    "confidence": 0.90
+  },
+  {
+    "concept": "Intra-NR Handover",
+    "domain": "mobility",
+    "spec_reference": "3GPP TS 38.331 Section 5.3.5",
+    "purpose": "Handover within NR network triggered by measurement reports, executed via RRCReconfiguration with reconfigurationWithSync",
+    "trigger_conditions": [
+      "Measurement event A3 triggered (neighbor better than serving by offset)",
+      "Measurement event A5 triggered (serving worse AND neighbor better than thresholds)",
+      "Network decision based on measurement report"
+    ],
+    "related_kpis": [
+      "handover_success_rate",
+      "rsrp_dbm",
+      "rsrq_db",
+      "latency_ms",
+      "throughput_dl_mbps"
+    ],
+    "kpi_patterns": [
+      "HO success rate > 95% indicates healthy mobility",
+      "Low RSRP at HO trigger may indicate late HO",
+      "Short inter-HO time indicates ping-pong"
+    ],
+    "failure_symptoms": [
+      "Handover failure (T304 expiry)",
+      "Late handover (RLF before HO)",
+      "Early handover (quick return to source)",
+      "Ping-pong handover (rapid back-and-forth)"
+    ],
+    "possible_root_causes": [
+      "A3/A5 threshold misconfiguration",
+      "Hysteresis/timeToTrigger inappropriate",
+      "Coverage gap between source and target",
+      "Target cell RACH congestion",
+      "Missing neighbor relations",
+      "PCI confusion"
+    ],
+    "operational_impact": [
+      "Call drops during mobility",
+      "Throughput degradation at cell edges",
+      "Signaling overhead from ping-pong",
+      "Poor user experience during handover"
+    ],
+    "recommended_actions": [
+      "Analyze HO statistics by cell pair",
+      "Review VarRLF-Report for HO failure patterns",
+      "Optimize A3 offset (2-6 dB), hysteresis (1-2 dB), TTT (100-320 ms)",
+      "Verify neighbor relation table completeness",
+      "Configure dedicated HO preambles for reliable RACH"
+    ],
+    "related_events": [
+      "A3",
+      "A5",
+      "Handover",
+      "Handover failure"
+    ],
+    "related_timers": [
+      "T304",
+      "timeToTrigger",
+      "T310"
+    ],
+    "confidence": 0.96
+  },
+  {
+    "concept": "Conditional Handover (CHO)",
+    "domain": "mobility",
+    "spec_reference": "3GPP TS 38.331 Section 5.3.5.13",
+    "purpose": "Pre-configured handover where UE autonomously executes HO when configured conditions are met, reducing HO latency and improving reliability",
+    "trigger_conditions": [
+      "condEventA3 (neighbor becomes offset better than SpCell)",
+      "condEventA4 (neighbor becomes better than threshold)",
+      "condEventA5 (SpCell worse AND neighbor better)",
+      "Condition fulfilled during timeToTrigger period"
+    ],
+    "related_kpis": [
+      "handover_success_rate",
+      "latency_ms",
+      "rsrp_dbm"
+    ],
+    "kpi_patterns": [
+      "Improved HO success rate with CHO enabled",
+      "Reduced HO latency (no real-time signaling)",
+      "Better HO reliability in challenging RF"
+    ],
+    "failure_symptoms": [
+      "CHO not triggered despite conditions met",
+      "T304 expiry during CHO execution",
+      "Fallback to normal HO"
+    ],
+    "possible_root_causes": [
+      "CHO condition thresholds not matching RF",
+      "Candidate cell list incomplete",
+      "Stored configuration mismatch"
+    ],
+    "operational_impact": [
+      "Improved mobility reliability",
+      "Reduced signaling latency",
+      "Better performance in high-speed scenarios"
+    ],
+    "recommended_actions": [
+      "Configure CHO conditions aligned with normal HO thresholds",
+      "Include multiple candidate cells in configuration",
+      "Monitor CHO execution rate vs normal HO",
+      "Analyze CHO failure patterns"
+    ],
+    "related_events": [
+      "CHO",
+      "A3",
+      "A5"
+    ],
+    "related_timers": [
+      "T304",
+      "timeToTrigger"
+    ],
+    "confidence": 0.88
+  },
+  {
+    "concept": "CQI Reporting",
+    "domain": "scheduling",
+    "spec_reference": "3GPP TS 38.213 Section 9, TS 38.214 Section 5.2",
+    "purpose": "Channel Quality Indicator reporting to enable adaptive modulation and coding selection for optimal throughput",
+    "trigger_conditions": [
+      "Periodic CSI reporting configured",
+      "Aperiodic CSI triggered by DCI",
+      "Semi-persistent CSI activation"
+    ],
+    "related_kpis": [
+      "cqi_avg",
+      "mcs_dl_avg",
+      "throughput_dl_mbps",
+      "bler_pct",
+      "sinr_db"
+    ],
+    "kpi_patterns": [
+      "Low CQI correlating with low SINR",
+      "CQI-MCS mismatch indicating stale reporting",
+      "Throughput degradation with inconsistent CQI"
+    ],
+    "failure_symptoms": [
+      "Throughput lower than expected for RF conditions",
+      "High BLER due to aggressive MCS",
+      "Low spectral efficiency despite good SINR"
+    ],
+    "possible_root_causes": [
+      "CSI-RS interference",
+      "CQI reporting delay/inaccuracy",
+      "Wideband vs subband CQI mismatch",
+      "UE implementation issues"
+    ],
+    "operational_impact": [
+      "Throughput optimization",
+      "Spectral efficiency",
+      "Resource utilization"
+    ],
+    "recommended_actions": [
+      "Verify CSI-RS configuration and interference",
+      "Analyze CQI distribution by cell",
+      "Check MCS selection against reported CQI",
+      "Optimize CSI reporting periodicity"
+    ],
+    "related_events": [
+      "CSI reporting"
+    ],
+    "related_timers": [
+      "csi-ReportPeriodicity"
+    ],
+    "confidence": 0.89
+  },
+  {
+    "concept": "HARQ Retransmissions",
+    "domain": "radio_quality",
+    "spec_reference": "3GPP TS 38.213 Section 9.1, TS 38.321",
+    "purpose": "Hybrid ARQ feedback and retransmission for error correction at MAC layer",
+    "trigger_conditions": [
+      "NACK received for PDSCH/PUSCH transmission",
+      "DTX (no feedback) treated as NACK",
+      "HARQ process timeout"
+    ],
+    "related_kpis": [
+      "bler_pct",
+      "throughput_dl_mbps",
+      "throughput_ul_mbps",
+      "latency_ms"
+    ],
+    "kpi_patterns": [
+      "High initial BLER (>10%) indicating poor link adaptation",
+      "Residual BLER after HARQ indicating persistent errors",
+      "Increased latency with high retransmission count"
+    ],
+    "failure_symptoms": [
+      "Throughput degradation",
+      "Increased latency",
+      "RLC retransmissions (if HARQ fails)",
+      "Potential RLF from RLC max retx"
+    ],
+    "possible_root_causes": [
+      "MCS too aggressive for channel conditions",
+      "Interference causing decode failures",
+      "UE receiver degradation",
+      "Timing/synchronization issues"
+    ],
+    "operational_impact": [
+      "Throughput reduction",
+      "Latency increase",
+      "Reduced spectral efficiency"
+    ],
+    "recommended_actions": [
+      "Analyze BLER vs MCS correlation",
+      "Verify link adaptation algorithm",
+      "Check for interference patterns",
+      "Optimize HARQ timing"
+    ],
+    "related_events": [
+      "HARQ feedback"
+    ],
+    "related_timers": [
+      "HARQ RTT"
+    ],
+    "confidence": 0.91
+  },
+  {
+    "concept": "Timing Advance",
+    "domain": "radio_quality",
+    "spec_reference": "3GPP TS 38.213 Section 4.2, TS 38.321",
+    "purpose": "Uplink timing alignment to ensure UE transmissions arrive within cyclic prefix at gNB",
+    "trigger_conditions": [
+      "Initial timing advance from RACH procedure",
+      "Timing Advance Command MAC CE for adjustment",
+      "timeAlignmentTimer expiry requiring new TA"
+    ],
+    "related_kpis": [
+      "ta_advance_us",
+      "bler_pct",
+      "throughput_ul_mbps"
+    ],
+    "kpi_patterns": [
+      "Large TA values indicating cell edge or large cell",
+      "TA fluctuation indicating mobility or propagation changes",
+      "UL BLER increase with TA misalignment"
+    ],
+    "failure_symptoms": [
+      "Uplink synchronization loss",
+      "RACH required for TA re-acquisition",
+      "Uplink transmission failures",
+      "Throughput degradation"
+    ],
+    "possible_root_causes": [
+      "UE at cell edge (large propagation delay)",
+      "timeAlignmentTimer expiry without TA command",
+      "High mobility causing rapid TA changes",
+      "Large cell radius"
+    ],
+    "operational_impact": [
+      "UL performance",
+      "RACH load from TA expiry",
+      "Service continuity"
+    ],
+    "recommended_actions": [
+      "Configure appropriate timeAlignmentTimer (500ms-10.24s)",
+      "Monitor TA distribution for cell planning",
+      "Analyze TA command rate for optimization",
+      "Consider cell size impact on TA range"
+    ],
+    "related_events": [
+      "RACH",
+      "TA Command"
+    ],
+    "related_timers": [
+      "timeAlignmentTimer"
+    ],
+    "confidence": 0.87
+  },
+  {
+    "concept": "Radio Link Monitoring (RLM)",
+    "domain": "radio_quality",
+    "spec_reference": "3GPP TS 38.213 Section 5",
+    "purpose": "Physical layer monitoring of downlink radio link quality using Qout/Qin thresholds to trigger out-of-sync/in-sync indications",
+    "trigger_conditions": [
+      "DL BLER exceeds Qout threshold (out-of-sync)",
+      "DL BLER falls below Qin threshold (in-sync)",
+      "Based on hypothetical PDCCH BLER estimation"
+    ],
+    "related_kpis": [
+      "bler_pct",
+      "sinr_db",
+      "rsrp_dbm"
+    ],
+    "kpi_patterns": [
+      "Qout threshold (~10% PDCCH BLER) triggering out-of-sync",
+      "Qin threshold (~2% PDCCH BLER) triggering in-sync",
+      "Correlation between SINR and sync state"
+    ],
+    "failure_symptoms": [
+      "Frequent out-of-sync indications",
+      "T310 timer starts",
+      "Potential RLF"
+    ],
+    "possible_root_causes": [
+      "Poor PDCCH coverage",
+      "Interference on control channel",
+      "Beam misalignment"
+    ],
+    "operational_impact": [
+      "RLF detection sensitivity",
+      "Connection stability"
+    ],
+    "recommended_actions": [
+      "Verify PDCCH power configuration",
+      "Analyze RLM RS configuration",
+      "Check for control channel interference"
+    ],
+    "related_events": [
+      "Out-of-sync",
+      "In-sync",
+      "RLF"
+    ],
+    "related_timers": [
+      "T310",
+      "N310",
+      "N311"
+    ],
+    "confidence": 0.88
+  },
+  {
+    "concept": "Dual Connectivity (DC)",
+    "domain": "transport",
+    "spec_reference": "3GPP TS 38.300 Section 9",
+    "purpose": "UE connected to two cell groups (MCG and SCG) simultaneously for throughput aggregation and reliability",
+    "trigger_conditions": [
+      "Network configures SCG addition",
+      "SN (Secondary Node) addition via XnAP",
+      "UE capability supports DC"
+    ],
+    "related_kpis": [
+      "throughput_dl_mbps",
+      "throughput_ul_mbps",
+      "connected_ues"
+    ],
+    "kpi_patterns": [
+      "Aggregated throughput from MCG + SCG",
+      "SCG utilization patterns",
+      "DC activation success rate"
+    ],
+    "failure_symptoms": [
+      "SCG failure",
+      "Split bearer performance issues",
+      "SCG change failures"
+    ],
+    "possible_root_causes": [
+      "SCG coverage issues",
+      "Xn interface problems",
+      "SCG RLF",
+      "Backhaul limitations"
+    ],
+    "operational_impact": [
+      "Peak throughput capability",
+      "Resource utilization efficiency",
+      "User experience for high-bandwidth applications"
+    ],
+    "recommended_actions": [
+      "Monitor SCG failure rate",
+      "Analyze SCG addition success",
+      "Verify Xn interface performance",
+      "Optimize SCG cell selection"
+    ],
+    "related_events": [
+      "SCG addition",
+      "SCG failure",
+      "SCG change"
+    ],
+    "related_timers": [
+      "T304"
+    ],
+    "confidence": 0.86
+  },
+  {
+    "concept": "Mobility Load Balancing (MLB)",
+    "domain": "congestion",
+    "spec_reference": "3GPP TS 38.300 Section 15.5.1",
+    "purpose": "Distribute load between cells by adjusting handover parameters or triggering load-based handovers",
+    "trigger_conditions": [
+      "Cell load exceeds threshold",
+      "Load information exchange between nodes",
+      "Handover parameter adjustment"
+    ],
+    "related_kpis": [
+      "prb_utilization_pct",
+      "connected_ues",
+      "throughput_dl_mbps"
+    ],
+    "kpi_patterns": [
+      "High PRB utilization (>80%) triggering MLB",
+      "Uneven load distribution between cells",
+      "Throughput improvement after load balancing"
+    ],
+    "failure_symptoms": [
+      "Persistent congestion despite MLB enabled",
+      "Ping-pong due to aggressive MLB",
+      "Unbalanced cell loading"
+    ],
+    "possible_root_causes": [
+      "MLB thresholds misconfigured",
+      "Neighbor cells also congested",
+      "Load reporting inaccuracies"
+    ],
+    "operational_impact": [
+      "Capacity optimization",
+      "User throughput",
+      "Network efficiency"
+    ],
+    "recommended_actions": [
+      "Configure appropriate load thresholds",
+      "Enable load information exchange on Xn",
+      "Monitor MLB effectiveness",
+      "Balance MLB aggressiveness vs mobility stability"
+    ],
+    "related_events": [
+      "Load balancing HO",
+      "CIO adjustment"
+    ],
+    "related_timers": [
+      "Load reporting period"
+    ],
+    "confidence": 0.85
+  },
+  {
+    "concept": "Mobility Robustness Optimization (MRO)",
+    "domain": "mobility",
+    "spec_reference": "3GPP TS 38.300 Section 15.5.2",
+    "purpose": "Automatic detection and correction of mobility problems (too-early HO, too-late HO, HO to wrong cell)",
+    "trigger_conditions": [
+      "RLF report received indicating HO problem",
+      "Handover failure detected",
+      "Re-establishment to unexpected cell"
+    ],
+    "related_kpis": [
+      "handover_success_rate",
+      "rsrp_dbm"
+    ],
+    "kpi_patterns": [
+      "Too-late HO: RLF on source, successful re-establishment",
+      "Too-early HO: RLF on target shortly after HO",
+      "Wrong cell HO: Re-establishment to third cell"
+    ],
+    "failure_symptoms": [
+      "Classified HO failures in MRO reports",
+      "Repeated failures on same cell pair"
+    ],
+    "possible_root_causes": [
+      "HO parameter misconfiguration",
+      "Coverage imbalance",
+      "Neighbor relation issues"
+    ],
+    "operational_impact": [
+      "Automated HO optimization",
+      "Reduced manual parameter tuning",
+      "Improved mobility performance"
+    ],
+    "recommended_actions": [
+      "Enable MRO and RLF reporting",
+      "Analyze MRO classifications by cell pair",
+      "Apply MRO-recommended parameter changes",
+      "Monitor MRO effectiveness"
+    ],
+    "related_events": [
+      "Too-late HO",
+      "Too-early HO",
+      "HO to wrong cell"
+    ],
+    "related_timers": [
+      "Tstore_UE_cntxt"
+    ],
+    "confidence": 0.89
+  },
+  {
+    "concept": "Inter-Cell Interference Coordination (ICIC)",
+    "domain": "interference",
+    "spec_reference": "3GPP TS 38.300 Section 17",
+    "purpose": "Coordination between cells to manage interference through power control, resource allocation, or beam management",
+    "trigger_conditions": [
+      "High interference detected",
+      "Load/interference information exchange on Xn",
+      "Resource status reporting"
+    ],
+    "related_kpis": [
+      "interference_level_dbm",
+      "sinr_db",
+      "throughput_dl_mbps",
+      "prb_utilization_pct"
+    ],
+    "kpi_patterns": [
+      "High interference with overlapping coverage",
+      "SINR improvement after ICIC activation",
+      "Cell-edge throughput improvement"
+    ],
+    "failure_symptoms": [
+      "Persistent high interference",
+      "Low SINR at cell edges",
+      "Throughput degradation despite adequate RSRP"
+    ],
+    "possible_root_causes": [
+      "ICIC not enabled or misconfigured",
+      "No Xn interface for coordination",
+      "Resource allocation conflicts"
+    ],
+    "operational_impact": [
+      "Cell-edge performance",
+      "Spectral efficiency",
+      "User throughput"
+    ],
+    "recommended_actions": [
+      "Enable load/interference reporting on Xn",
+      "Configure ICIC parameters",
+      "Monitor interference levels by PRB",
+      "Consider frequency/power coordination strategies"
+    ],
+    "related_events": [
+      "Interference report"
+    ],
+    "related_timers": [
+      "Resource status reporting period"
+    ],
+    "confidence": 0.84
+  },
+  {
+    "concept": "PCI Collision/Confusion",
+    "domain": "interference",
+    "spec_reference": "3GPP TS 38.300 Section 15.5.3",
+    "purpose": "Detection and resolution of Physical Cell ID conflicts causing measurement and handover issues",
+    "trigger_conditions": [
+      "Two cells with same PCI detectable by UE",
+      "PCI mod 30 collision causing DMRS interference",
+      "ANR detecting PCI ambiguity"
+    ],
+    "related_kpis": [
+      "handover_success_rate",
+      "sinr_db",
+      "bler_pct"
+    ],
+    "kpi_patterns": [
+      "Measurement confusion between cells with same PCI",
+      "HO failures to wrong target",
+      "Unexpected interference patterns"
+    ],
+    "failure_symptoms": [
+      "Handover to wrong cell",
+      "Measurement report ambiguity",
+      "Unexpected interference despite good planning"
+    ],
+    "possible_root_causes": [
+      "PCI planning error",
+      "Network expansion without PCI replan",
+      "Uncoordinated small cell deployment"
+    ],
+    "operational_impact": [
+      "Mobility reliability",
+      "Measurement accuracy",
+      "Network-wide interference"
+    ],
+    "recommended_actions": [
+      "Audit PCI plan for collisions",
+      "Check PCI mod 30 for DMRS conflicts",
+      "Enable PCI conflict detection in SON",
+      "Reassign conflicting PCIs"
+    ],
+    "related_events": [
+      "ANR",
+      "Handover failure"
+    ],
+    "related_timers": [],
+    "confidence": 0.91
+  },
+  {
+    "concept": "PRB Congestion",
+    "domain": "congestion",
+    "spec_reference": "3GPP TS 38.300 Section 15.5.1",
+    "purpose": "Physical Resource Block exhaustion limiting scheduling capacity and user throughput",
+    "trigger_conditions": [
+      "PRB utilization exceeds threshold (>80-90%)",
+      "Scheduler unable to allocate resources",
+      "High number of connected UEs"
+    ],
+    "related_kpis": [
+      "prb_utilization_pct",
+      "connected_ues",
+      "throughput_dl_mbps",
+      "throughput_ul_mbps",
+      "latency_ms"
+    ],
+    "kpi_patterns": [
+      "PRB utilization >80% with throughput degradation",
+      "High connected_ues correlating with congestion",
+      "Latency increase during peak hours"
+    ],
+    "failure_symptoms": [
+      "User throughput degradation",
+      "Increased latency",
+      "Scheduling delays",
+      "QoS violations"
+    ],
+    "possible_root_causes": [
+      "Insufficient spectrum",
+      "Uneven load distribution",
+      "High user density",
+      "Inefficient scheduling"
+    ],
+    "operational_impact": [
+      "User experience degradation",
+      "QoS failures",
+      "Revenue impact"
+    ],
+    "recommended_actions": [
+      "Enable load balancing to offload traffic",
+      "Consider carrier aggregation or new spectrum",
+      "Optimize cell coverage to distribute load",
+      "Review scheduling efficiency"
+    ],
+    "related_events": [
+      "Congestion alarm"
+    ],
+    "related_timers": [],
+    "confidence": 0.93
+  },
+  {
+    "concept": "NGAP Initial Context Setup",
+    "domain": "transport",
+    "spec_reference": "3GPP TS 38.413 Section 8.3.1",
+    "purpose": "Establishment of UE context at gNB including security and PDU session resources",
+    "trigger_conditions": [
+      "AMF sends InitialContextSetupRequest",
+      "Following successful authentication",
+      "PDU session establishment"
+    ],
+    "related_kpis": [
+      "connected_ues",
+      "latency_ms"
+    ],
+    "kpi_patterns": [
+      "Context setup success rate",
+      "Setup latency distribution"
+    ],
+    "failure_symptoms": [
+      "Initial context setup failure",
+      "UE unable to establish data session",
+      "Registration failures"
+    ],
+    "possible_root_causes": [
+      "Radio resource unavailable",
+      "Security activation failure",
+      "PDU session setup failure",
+      "Transport issues"
+    ],
+    "operational_impact": [
+      "Service establishment success",
+      "User onboarding",
+      "Network accessibility"
+    ],
+    "recommended_actions": [
+      "Monitor context setup failure causes",
+      "Verify security configuration",
+      "Check radio resource availability",
+      "Analyze NG interface errors"
+    ],
+    "related_events": [
+      "Initial context setup"
+    ],
+    "related_timers": [],
+    "confidence": 0.85
+  },
+  {
+    "concept": "XnAP Handover",
+    "domain": "mobility",
+    "spec_reference": "3GPP TS 38.423 Section 8.2",
+    "purpose": "Inter-gNB handover signaling over Xn interface for mobility between nodes",
+    "trigger_conditions": [
+      "Source gNB sends HandoverRequest",
+      "Target gNB prepares resources",
+      "UE reconfiguration for HO"
+    ],
+    "related_kpis": [
+      "handover_success_rate",
+      "latency_ms"
+    ],
+    "kpi_patterns": [
+      "Xn HO success vs NG HO success",
+      "Xn HO preparation time"
+    ],
+    "failure_symptoms": [
+      "Xn handover preparation failure",
+      "Fallback to NG handover",
+      "Extended HO latency"
+    ],
+    "possible_root_causes": [
+      "Xn interface issues",
+      "Target resource unavailable",
+      "Configuration mismatch",
+      "TNL failures"
+    ],
+    "operational_impact": [
+      "HO latency",
+      "Signaling efficiency",
+      "Core network load"
+    ],
+    "recommended_actions": [
+      "Monitor Xn interface health",
+      "Analyze HO preparation failures",
+      "Verify Xn connectivity between gNBs",
+      "Check error indication causes"
+    ],
+    "related_events": [
+      "Xn HO preparation",
+      "Xn HO execution"
+    ],
+    "related_timers": [
+      "T304"
+    ],
+    "confidence": 0.86
+  },
+  {
+    "concept": "Carrier Aggregation (CA)",
+    "domain": "scheduling",
+    "spec_reference": "3GPP TS 38.300 Section 9",
+    "purpose": "Aggregation of multiple component carriers to increase peak throughput",
+    "trigger_conditions": [
+      "SCell addition configured by network",
+      "UE capability supports CA",
+      "Secondary cell activation"
+    ],
+    "related_kpis": [
+      "throughput_dl_mbps",
+      "throughput_ul_mbps",
+      "prb_utilization_pct"
+    ],
+    "kpi_patterns": [
+      "Throughput scaling with active CCs",
+      "SCell utilization patterns",
+      "CA activation success rate"
+    ],
+    "failure_symptoms": [
+      "SCell activation failure",
+      "Throughput not scaling with CA",
+      "Frequent SCell deactivation"
+    ],
+    "possible_root_causes": [
+      "SCell coverage insufficient",
+      "UE capability limitation",
+      "Configuration issues",
+      "Timing alignment problems"
+    ],
+    "operational_impact": [
+      "Peak throughput",
+      "Spectrum utilization",
+      "User experience"
+    ],
+    "recommended_actions": [
+      "Monitor SCell activation success",
+      "Analyze SCell deactivation causes",
+      "Verify CA configuration",
+      "Check SCell coverage alignment"
+    ],
+    "related_events": [
+      "SCell activation",
+      "SCell deactivation",
+      "A6 event"
+    ],
+    "related_timers": [
+      "sCellDeactivationTimer"
+    ],
+    "confidence": 0.88
+  },
+  {
+    "concept": "Uplink Power Control",
+    "domain": "radio_quality",
+    "spec_reference": "3GPP TS 38.213 Section 7",
+    "purpose": "Control UE transmit power for uplink channels to manage coverage and interference",
+    "trigger_conditions": [
+      "Open-loop power control based on path loss",
+      "Closed-loop power control via TPC commands",
+      "Power ramping during RACH"
+    ],
+    "related_kpis": [
+      "sinr_db",
+      "throughput_ul_mbps",
+      "interference_level_dbm"
+    ],
+    "kpi_patterns": [
+      "UL SINR vs UE transmit power",
+      "Power headroom distribution",
+      "UL interference patterns"
+    ],
+    "failure_symptoms": [
+      "UL coverage issues",
+      "UL interference to neighbors",
+      "Power limited UEs"
+    ],
+    "possible_root_causes": [
+      "P0 or alpha misconfigured",
+      "Path loss estimation errors",
+      "TPC loop instability"
+    ],
+    "operational_impact": [
+      "UL coverage",
+      "UL capacity",
+      "Inter-cell interference"
+    ],
+    "recommended_actions": [
+      "Optimize P0 and alpha parameters",
+      "Monitor power headroom reports",
+      "Balance coverage vs interference",
+      "Analyze UL SINR distribution"
+    ],
+    "related_events": [
+      "TPC command"
+    ],
+    "related_timers": [],
+    "confidence": 0.86
+  },
+  {
+    "concept": "QoS Flow Management",
+    "domain": "transport",
+    "spec_reference": "3GPP TS 38.300 Section 6",
+    "purpose": "Differentiated treatment of traffic based on 5QI and QoS parameters",
+    "trigger_conditions": [
+      "PDU session with QoS flows established",
+      "QoS flow mapping to DRB",
+      "Reflective QoS updates"
+    ],
+    "related_kpis": [
+      "latency_ms",
+      "throughput_dl_mbps",
+      "throughput_ul_mbps"
+    ],
+    "kpi_patterns": [
+      "Latency per QoS class",
+      "Throughput by flow type",
+      "QoS violation rate"
+    ],
+    "failure_symptoms": [
+      "QoS not met for critical flows",
+      "Voice quality degradation",
+      "Video buffering"
+    ],
+    "possible_root_causes": [
+      "Scheduler not prioritizing correctly",
+      "Insufficient resources",
+      "DRB mapping issues"
+    ],
+    "operational_impact": [
+      "Service quality",
+      "SLA compliance",
+      "User experience"
+    ],
+    "recommended_actions": [
+      "Verify QoS flow to DRB mapping",
+      "Check scheduler QoS handling",
+      "Monitor per-flow KPIs",
+      "Ensure adequate resources for GBR flows"
+    ],
+    "related_events": [
+      "QoS flow setup",
+      "QoS modification"
+    ],
+    "related_timers": [],
+    "confidence": 0.84
+  }
+]

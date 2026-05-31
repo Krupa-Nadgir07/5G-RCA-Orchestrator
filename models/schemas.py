@@ -190,6 +190,11 @@ class RCAResult(BaseModel):
     model_used: str = ""
     escalated: bool = False
     latency_ms: int = 0
+    tokens_used: int = 0
+    kpis: Optional[KPIMetrics] = None
+    anomalies: list[dict[str, Any]] = Field(default_factory=list)
+    correlations: list[dict[str, Any]] = Field(default_factory=list)
+    hypotheses: list[dict[str, Any]] = Field(default_factory=list)
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     cell_id: Optional[str] = None
     gnb_id: Optional[str] = None

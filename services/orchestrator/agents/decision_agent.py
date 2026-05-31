@@ -111,8 +111,57 @@ class DecisionAgent(BaseAgent):
                        threshold=self.escalation_threshold)
             top_hypothesis, escalated = await self._escalate_to_llm(event, memory)
 
+        # Calculate total tokens used across hypothesis & decision phases
+        hypothesis_data = await memory.retrieve("hypotheses") or {}
+        hyp_tokens = hypothesis_data.get("tokens_used", 0)
+        esc_tokens = top_hypothesis.get("tokens_used", 0) if escalated else 0
+        total_tokens = hyp_tokens + esc_tokens
+
+        # Extract features for probabilistic confidence calibration
+        reasoning_trace = self._compile_reasoning_trace(top_hypothesis)
+        num_steps = len(reasoning_trace)
+
+        knowledge_context = await memory.retrieve("knowledge_context") or {}
+        contexts = knowledge_context.get("contexts", [])
+        scores = []
+        for ctx in contexts:
+            for chunk in ctx.get("chunks", []):
+                if "score" in chunk:
+                    scores.append(chunk["score"])
+        avg_rag_score = sum(scores) / len(scores) if scores else 0.0
+
+        evidence_count = len(top_hypothesis.get("supporting_evidence", []))
+
+        # Calibrate final confidence
+        raw_final_confidence = top_hypothesis.get("validation_score", top_hypothesis.get("confidence", 0.5))
+        features = {
+            "num_reasoning_steps": num_steps,
+            "avg_rag_score": avg_rag_score,
+            "evidence_count": evidence_count,
+        }
+        calibrated_confidence = self.inference_service.calibrator.calibrate(
+            raw_final_confidence,
+            features=features
+        )
+        top_hypothesis["calibrated_confidence"] = calibrated_confidence
+
+        # Retrieve signal analysis details
+        signal_analysis = await memory.retrieve("signal_analysis") or {}
+        anomalies = signal_analysis.get("anomalies", [])
+        correlations = signal_analysis.get("correlations", [])
+
         # Build the RCA result
-        rca_result = self._build_rca_result(event, top_hypothesis, memory, escalated, start_time)
+        rca_result = self._build_rca_result(
+            event,
+            top_hypothesis,
+            memory,
+            escalated,
+            start_time,
+            tokens_used=total_tokens,
+            anomalies=anomalies,
+            correlations=correlations,
+            hypotheses=validated,
+        )
         
         # Store final result in working memory
         await memory.store("rca_result", rca_result.model_dump(mode="json"))
@@ -158,6 +207,7 @@ class DecisionAgent(BaseAgent):
                     "validation_score": data.get("confidence", response.confidence),
                     "supporting_evidence": data.get("supporting_evidence", []),
                     "model_used": response.model,
+                    "tokens_used": response.tokens_used,
                 }, True
             except (json.JSONDecodeError, TypeError):
                 return {
@@ -167,16 +217,19 @@ class DecisionAgent(BaseAgent):
                     "validation_score": response.confidence,
                     "supporting_evidence": [],
                     "model_used": response.model,
+                    "tokens_used": response.tokens_used,
                 }, True
         
         # If LLM also fails, return best available hypothesis
         validated = await memory.retrieve("validated_hypotheses") or []
-        return (validated[0] if validated else {
+        fallback_res = dict(validated[0]) if validated else {
             "root_cause": "unknown",
             "specific_cause": "Unable to determine root cause",
             "confidence": 0.2,
             "validation_score": 0.2,
-        }), True
+        }
+        fallback_res["tokens_used"] = response.tokens_used
+        return fallback_res, True
 
     def _build_escalation_prompt(self, event: ProcessedEvent, context: dict) -> str:
         """Build prompt for LLM escalation."""
@@ -207,6 +260,10 @@ class DecisionAgent(BaseAgent):
         memory: WorkingMemory, 
         escalated: bool,
         start_time: float,
+        tokens_used: int = 0,
+        anomalies: list = None,
+        correlations: list = None,
+        hypotheses: list = None,
     ) -> RCAResult:
         """Build the final RCA result."""
         # Determine root cause category
@@ -231,14 +288,21 @@ class DecisionAgent(BaseAgent):
         return RCAResult(
             root_cause=root_cause,
             specific_cause=top_hypothesis.get("specific_cause", "Unknown"),
-            confidence=min(1.0, max(0.0, top_hypothesis.get("validation_score", 
-                                                            top_hypothesis.get("confidence", 0.5)))),
+            confidence=top_hypothesis.get(
+                "calibrated_confidence",
+                min(1.0, max(0.0, top_hypothesis.get("validation_score", top_hypothesis.get("confidence", 0.5))))
+            ),
             reasoning_trace=reasoning_trace,
             supporting_evidence=top_hypothesis.get("supporting_evidence", []),
             recommended_actions=actions[:3],
             model_used=top_hypothesis.get("model_used", settings.slm_model),
             escalated=escalated,
             latency_ms=latency_ms,
+            tokens_used=tokens_used,
+            kpis=event.kpis,
+            anomalies=anomalies or [],
+            correlations=correlations or [],
+            hypotheses=hypotheses or [],
             cell_id=event.cell_id,
             gnb_id=event.gnb_id,
             event_ids=[event.event_id],

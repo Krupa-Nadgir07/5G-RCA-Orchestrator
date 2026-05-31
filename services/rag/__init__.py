@@ -1,1 +1,1 @@
-"""RAG Knowledge Service - Multi-hop retrieval with re-ranking."""
+"""RAG Knowledge Service - Multi-collection retrieval with Qdrant vector search."""

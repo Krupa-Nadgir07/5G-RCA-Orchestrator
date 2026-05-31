@@ -143,6 +143,9 @@ def main():
     collection_info = client.get_collection(COLLECTION_NAME)
     print(f"\nVerification - Points in collection: {collection_info.points_count}")
 
+    print(f"\nTIP: To also load the JSONL RAG datasets into Qdrant, run:")
+    print(f"     python scripts/ingest_rag_datasets.py")
+
 
 if __name__ == "__main__":
     main()

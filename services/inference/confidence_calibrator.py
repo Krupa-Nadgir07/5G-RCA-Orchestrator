@@ -41,11 +41,7 @@ class ConfidenceCalibrator:
         Returns:
             Calibrated confidence score (0-1)
         """
-        if not self._is_fitted:
-            # Use default parameters
-            return self._platt_scale(raw_confidence)
-        
-        # Feature-aware calibration
+        # Feature-aware calibration (heuristic adjustment applied first)
         if features:
             adjustment = self._feature_adjustment(features)
             raw_confidence = max(0.0, min(1.0, raw_confidence + adjustment))
@@ -94,8 +90,17 @@ class ConfidenceCalibrator:
             predictions: Raw model confidence scores
             ground_truth: Whether the prediction was actually correct
         """
-        if len(predictions) < 50:
-            logger.warning("Insufficient data for calibration", n=len(predictions))
+        min_fit_size = 50
+        try:
+            from config.settings import get_settings
+            settings = get_settings()
+            if settings.app_debug:
+                min_fit_size = 5
+        except Exception:
+            pass
+
+        if len(predictions) < min_fit_size:
+            logger.warning("Insufficient data for calibration", n=len(predictions), required=min_fit_size)
             return
 
         # Simple grid search for Platt scaling parameters
@@ -118,7 +123,7 @@ class ConfidenceCalibrator:
         self._is_fitted = True
         
         logger.info("Calibrator fitted", 
-                   scale_a=best_a, scale_b=best_b, ece=round(best_ece, 4))
+                    scale_a=best_a, scale_b=best_b, ece=round(best_ece, 4))
 
     def _compute_ece(self, calibrated: list[float], ground_truth: list[bool], n_bins: int = 10) -> float:
         """Compute Expected Calibration Error."""
@@ -151,8 +156,17 @@ class ConfidenceCalibrator:
         """Add a calibration observation for online learning."""
         self._calibration_data.append((predicted_confidence, was_correct))
         
+        refit_interval = 100
+        try:
+            from config.settings import get_settings
+            settings = get_settings()
+            if settings.app_debug:
+                refit_interval = 5
+        except Exception:
+            pass
+
         # Refit periodically
-        if len(self._calibration_data) % 100 == 0 and len(self._calibration_data) >= 100:
+        if len(self._calibration_data) % refit_interval == 0 and len(self._calibration_data) >= refit_interval:
             predictions = [p for p, _ in self._calibration_data]
             truths = [t for _, t in self._calibration_data]
             self.fit(predictions, truths)
